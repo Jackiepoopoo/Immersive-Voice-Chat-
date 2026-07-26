@@ -279,6 +279,10 @@ net.Receive("vo_occlusion_update", function()
     local voiceMode = net.ReadUInt(2)
     local isRadio = net.ReadBit() == 1
     
+    if isRadio then
+        print("[Radio-CL] Received isRadio=1 from " .. (IsValid(speaker) and speaker:Nick() or "???"))
+    end
+    
     if IsValid(speaker) then
         local steamID = speaker:SteamID64()
         ImmersiveVoiceChat.Client.StoredOcclusion[steamID] = occlusion
@@ -297,7 +301,7 @@ net.Receive("vo_occlusion_update", function()
         ImmersiveVoiceChat.Client.StoredVoiceMode = ImmersiveVoiceChat.Client.StoredVoiceMode or {}
         ImmersiveVoiceChat.Client.StoredVoiceMode[steamID] = voiceMode
         ImmersiveVoiceChat.Client.StoredRadio = ImmersiveVoiceChat.Client.StoredRadio or {}
-        ImmersiveVoiceChat.Client.StoredRadio[steamID] = isRadio
+        ImmersiveVoiceChat.Client.StoredRadio[steamID] = isRadio and 1 or 0
         
         -- Push all occlusion data to binary module for Mumble shared memory
         if ImmersiveVoiceChat.Client.ModuleLoaded and immersivevoicechat then
@@ -313,6 +317,9 @@ net.Receive("vo_occlusion_update", function()
                         local uw = ImmersiveVoiceChat.Client.StoredUnderwater[sid] and 1 or 0
                         local vmode = ImmersiveVoiceChat.Client.StoredVoiceMode[sid] or 1
                         local radio = ImmersiveVoiceChat.Client.StoredRadio and ImmersiveVoiceChat.Client.StoredRadio[sid] or 0
+                        if radio == 1 then
+                            print("[Radio-CL] Pushing to module: " .. p:Nick() .. " radio=" .. radio)
+                        end
                         local px, py, pz = 0, 0, 0
                         if pos then px, py, pz = pos.x, pos.y, pos.z end
                         data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, vmode, radio}
@@ -835,4 +842,40 @@ end
 
 concommand.Add("vo_settings", function()
     ImmersiveVoiceChat.Client:OpenSettingsMenu()
+end)
+
+concommand.Add("vo_radio_diag", function()
+    print("=== Radio Client Diagnostics ===")
+    print("Module Loaded: " .. tostring(ImmersiveVoiceChat.Client.ModuleLoaded))
+    print("immersivevoicechat global: " .. tostring(immersivevoicechat ~= nil))
+    if immersivevoicechat and immersivevoicechat.GetStatus then
+        local status = immersivevoicechat.GetStatus()
+        print("Module status: " .. util.TableToJSON(status, true))
+    end
+    print("\nStoredRadio:")
+    if ImmersiveVoiceChat.Client.StoredRadio then
+        for sid, radio in pairs(ImmersiveVoiceChat.Client.StoredRadio) do
+            local name = "unknown"
+            for _, p in ipairs(player.GetAll()) do
+                if IsValid(p) and p:SteamID64() == sid then
+                    name = p:Nick()
+                    break
+                end
+            end
+            print("  " .. name .. " (" .. sid .. "): radio=" .. tostring(radio))
+        end
+    else
+        print("  (none)")
+    end
+    print("\nStoredOcclusion:")
+    for sid, occ in pairs(ImmersiveVoiceChat.Client.StoredOcclusion) do
+        local name = "unknown"
+        for _, p in ipairs(player.GetAll()) do
+            if IsValid(p) and p:SteamID64() == sid then
+                name = p:Nick()
+                break
+            end
+        end
+        print("  " .. name .. ": occ=" .. string.format("%.2f", occ))
+    end
 end)

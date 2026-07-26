@@ -176,13 +176,13 @@ static void ApplyRadioFilter(float *pcm, uint32_t sampleCount, uint16_t channelC
         radio.reverbPos = 0;
     }
 
-    float hpCutoff = 300.0f;
-    float lpCutoff = 3000.0f;
+    float hpCutoff = 200.0f;
+    float lpCutoff = 3500.0f;
     float hpAlpha = 1.0f - expf(-2.0f * PI * hpCutoff / (float)sampleRate);
     float lpAlpha = 1.0f - expf(-2.0f * PI * lpCutoff / (float)sampleRate);
 
-    float noiseAmount = 0.12f;
-    float reverbMix = 0.15f;
+    float noiseAmount = 0.04f;
+    float reverbMix = 0.08f;
 
     uint32_t totalSamples = sampleCount * channelCount;
 
@@ -191,7 +191,7 @@ static void ApplyRadioFilter(float *pcm, uint32_t sampleCount, uint16_t channelC
     if (radio.squelchPhase < radio.squelchDur) {
         // Short impulse that decays quickly
         float t = radio.squelchPhase / radio.squelchDur;
-        squelchClick = (1.0f - t) * 0.3f * (radio.lfsr & 1 ? 1.0f : -1.0f);
+        squelchClick = (1.0f - t) * 0.15f * (radio.lfsr & 1 ? 1.0f : -1.0f);
     }
 
     for (uint32_t i = 0; i < totalSamples; i++) {
