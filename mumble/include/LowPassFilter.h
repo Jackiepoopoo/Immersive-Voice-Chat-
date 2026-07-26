@@ -34,6 +34,7 @@ public:
                 float s = buffer[idx];
                 for (int pass = 0; pass < FILTER_ORDER; pass++) {
                     m_prev[ch][pass] = m_prev[ch][pass] + m_alpha * (s - m_prev[ch][pass]);
+                    if (fabsf(m_prev[ch][pass]) < 1.0e-18f) m_prev[ch][pass] = 0.0f;
                     s = m_prev[ch][pass];
                 }
                 buffer[idx] = s;

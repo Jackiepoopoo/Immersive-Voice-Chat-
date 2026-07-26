@@ -153,10 +153,14 @@ static void ApplyStereoPanning(float *pcm, uint32_t sampleCount, uint16_t channe
     }
 }
 
-static void ApplyReverb(float *pcm, uint32_t sampleCount, uint16_t channelCount, uint32_t sampleRate, float indoorAmount, float roomSize, float surfaceAbsorb) {
+static inline float FlushDenormal(float x) {
+    return (fabsf(x) < 1.0e-18f) ? 0.0f : x;
+}
+
+static void ApplyReverb(float *pcm, uint32_t sampleCount, uint16_t channelCount, uint32_t sampleRate, float indoorAmount, float roomSize, float surfaceAbsorb, uint32_t userID) {
     if (indoorAmount < 0.05f) return;
 
-    auto& rev = g_reverb[0];
+    auto& rev = g_reverb[userID];
 
     // Room size scales reverb parameters
     // roomSize: 0-200 = small room, 200-500 = medium, 500+ = large hall/mall
@@ -170,6 +174,7 @@ static void ApplyReverb(float *pcm, uint32_t sampleCount, uint16_t channelCount,
 
     float wetMix = indoorAmount * (0.20f + sizeNorm * 0.35f) * (0.3f + absorbMod * 0.7f);
     float feedback = (0.35f + sizeNorm * 0.40f + indoorAmount * 0.15f) * (0.4f + absorbMod * 0.6f);
+    if (feedback > 0.85f) feedback = 0.85f;
     float damping = 0.55f - sizeNorm * 0.30f + surfaceAbsorb * 0.2f;
 
     uint32_t totalSamples = sampleCount * channelCount;
@@ -178,20 +183,22 @@ static void ApplyReverb(float *pcm, uint32_t sampleCount, uint16_t channelCount,
 
         for (int c = 0; c < 4; c++) {
             uint32_t readPos = (rev.positions[c] + REVERB_MAX_DELAY - REVERB_DELAYS[c]) % REVERB_MAX_DELAY;
-            float delayed = rev.bufs[c][readPos];
+            float delayed = FlushDenormal(rev.bufs[c][readPos]);
 
             // High-frequency damping: simple low-pass in feedback loop
-            // Simulates walls absorbing treble faster than bass
-            rev.lpfState[c] = rev.lpfState[c] * (1.0f - damping) + delayed * damping;
+            rev.lpfState[c] = FlushDenormal(rev.lpfState[c] * (1.0f - damping) + delayed * damping);
 
-            // Write input + damped feedback into delay line
-            rev.bufs[c][rev.positions[c]] = pcm[i] + rev.lpfState[c] * feedback;
+            // Write input + damped feedback into delay line, clamped to prevent blowup
+            float wet = pcm[i] + rev.lpfState[c] * feedback;
+            if (wet > 1.0f) wet = 1.0f;
+            if (wet < -1.0f) wet = -1.0f;
+            rev.bufs[c][rev.positions[c]] = wet;
             rev.positions[c] = (rev.positions[c] + 1) % REVERB_MAX_DELAY;
 
             summed += delayed;
         }
 
-        summed *= 0.25f;  // Average the 4 comb filters
+        summed *= 0.25f;
 
         // Mix dry + wet
         pcm[i] = pcm[i] * (1.0f - wetMix) + summed * wetMix;
@@ -378,7 +385,7 @@ MUMBLE_PLUGIN_EXPORT bool MUMBLE_PLUGIN_CALLING_CONVENTION
 mumble_onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t channelCount, uint32_t sampleRate, bool isSpeech, mumble_userid_t userID) {
     // Allow reverb tail to decay even after speech stops
     bool hasReverbTail = false;
-    auto revIt = g_reverb.find(0);
+    auto revIt = g_reverb.find(userID);
     if (revIt != g_reverb.end()) {
         hasReverbTail = revIt->second.lpfState[0] > 0.001f ||
                         revIt->second.lpfState[1] > 0.001f ||
@@ -405,17 +412,26 @@ mumble_onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t cha
 
     g_userNames[userID] = userName;
 
-    // If no speech and no reverb tail, skip
+    // If no speech but reverb tail is decaying, continue outputting it
     if (!isSpeech) {
-        // Still apply reverb decay on silence
-        uint32_t total = sampleCount * channelCount;
-        std::vector<float> silence(total, 0.0f);
-        float indoor = 0.5f;
-        ApplyReverb(silence.data(), sampleCount, channelCount, sampleRate, 0.5f, 150.0f, 0.5f);
-        for (uint32_t i = 0; i < total; i++) {
-            outputPCM[i] = silence[i];
+        if (hasReverbTail) {
+            uint32_t total = sampleCount * channelCount;
+            std::vector<float> silence(total, 0.0f);
+            float indoor = 0.5f;
+            float roomSz = 150.0f;
+            float absorb = 0.5f;
+            if (g_sharedData) {
+                indoor = g_sharedData->listenerIndoorAmount;
+                roomSz = g_sharedData->listenerRoomSize;
+                absorb = g_sharedData->listenerSurfaceAbsorb;
+            }
+            ApplyReverb(silence.data(), sampleCount, channelCount, sampleRate, indoor, roomSz, absorb, userID);
+            for (uint32_t i = 0; i < total; i++) {
+                outputPCM[i] = FlushDenormal(silence[i]);
+            }
+            return true;
         }
-        return true;
+        return false;
     }
 
     // Check if shared memory is stale (server closed)
@@ -554,7 +570,7 @@ mumble_onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t cha
 
     // --- Environmental reverb for indoor spaces ---
     float surfaceAbsorb = g_sharedData ? g_sharedData->listenerSurfaceAbsorb : 0.5f;
-    ApplyReverb(outputPCM, sampleCount, channelCount, sampleRate, info.indoorAmount, info.roomSize, surfaceAbsorb);
+    ApplyReverb(outputPCM, sampleCount, channelCount, sampleRate, info.indoorAmount, info.roomSize, surfaceAbsorb, userID);
 
     // --- Underwater audio effect ---
     bool speakerUnderwater = info.isUnderwater != 0;
