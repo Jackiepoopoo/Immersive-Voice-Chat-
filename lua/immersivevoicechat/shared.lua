@@ -1,44 +1,44 @@
--- Voice Occlusion Shared Utilities
+-- Immersive Voice Chat Shared Utilities
 -- Common functions used by both client and server
 
-VoiceOcclusion.Utils = VoiceOcclusion.Utils or {}
+ImmersiveVoiceChat.Utils = ImmersiveVoiceChat.Utils or {}
 
 -- Calculate distance between two positions
-function VoiceOcclusion.Utils.GetDistance(pos1, pos2)
+function ImmersiveVoiceChat.Utils.GetDistance(pos1, pos2)
     return pos1:Distance(pos2)
 end
 
 -- Calculate squared distance (faster, no sqrt)
-function VoiceOcclusion.Utils.GetDistanceSqr(pos1, pos2)
+function ImmersiveVoiceChat.Utils.GetDistanceSqr(pos1, pos2)
     return pos1:DistToSqr(pos2)
 end
 
 -- Clamp value between min and max
-function VoiceOcclusion.Utils.Clamp(val, min, max)
+function ImmersiveVoiceChat.Utils.Clamp(val, min, max)
     return math.Clamp(val, min, max)
 end
 
 -- Linear interpolation
-function VoiceOcclusion.Utils.Lerp(t, a, b)
+function ImmersiveVoiceChat.Utils.Lerp(t, a, b)
     return Lerp(t, a, b)
 end
 
 -- Check if point is inside a box (approximate)
-function VoiceOcclusion.Utils.IsPointInBox(point, boxMin, boxMax)
+function ImmersiveVoiceChat.Utils.IsPointInBox(point, boxMin, boxMax)
     return point.x >= boxMin.x and point.x <= boxMax.x and
            point.y >= boxMin.y and point.y <= boxMax.y and
            point.z >= boxMin.z and point.z <= boxMax.z
 end
 
 -- Get head position (approximate eye level)
-function VoiceOcclusion.Utils.GetHeadPosition(ply)
+function ImmersiveVoiceChat.Utils.GetHeadPosition(ply)
     if not IsValid(ply) then return nil end
     local pos = ply:GetPos()
-    return pos + Vector(0, 0, VoiceOcclusion.Config.HeadHeight)
+    return pos + Vector(0, 0, ImmersiveVoiceChat.Config.HeadHeight)
 end
 
 -- Check if two players are on the same team
-function VoiceOcclusion.Utils.SameTeam(ply1, ply2)
+function ImmersiveVoiceChat.Utils.SameTeam(ply1, ply2)
     if not IsValid(ply1) or not IsValid(ply2) then return false end
     
     -- If teams are disabled, consider everyone on same team
@@ -48,20 +48,20 @@ function VoiceOcclusion.Utils.SameTeam(ply1, ply2)
 end
 
 -- Debug print helper
-function VoiceOcclusion.Utils.DebugPrint(...)
-    if VoiceOcclusion.Config and VoiceOcclusion.Config.DebugMode then
-        print("[VoiceOcclusion Debug]", ...)
+function ImmersiveVoiceChat.Utils.DebugPrint(...)
+    if ImmersiveVoiceChat.Config and ImmersiveVoiceChat.Config.DebugMode then
+        print("[ImmersiveVoiceChat Debug]", ...)
     end
 end
 
 -- Format player name for debug output
-function VoiceOcclusion.Utils.PlayerName(ply)
+function ImmersiveVoiceChat.Utils.PlayerName(ply)
     if not IsValid(ply) then return "NULL" end
     return ply:Nick() .. " (" .. ply:SteamID() .. ")"
 end
 
 -- Get occlusion level description
-function VoiceOcclusion.Utils.GetOcclusionDescription(level)
+function ImmersiveVoiceChat.Utils.GetOcclusionDescription(level)
     if level <= 0 then
         return "Clear"
     elseif level < 0.3 then
@@ -76,7 +76,7 @@ function VoiceOcclusion.Utils.GetOcclusionDescription(level)
 end
 
 -- Table to net-friendly format
-function VoiceOcclusion.Utils.TableToNet(tbl)
+function ImmersiveVoiceChat.Utils.TableToNet(tbl)
     net.WriteUInt(table.Count(tbl), 16)
     for k, v in pairs(tbl) do
         net.WriteString(tostring(k))
@@ -85,7 +85,7 @@ function VoiceOcclusion.Utils.TableToNet(tbl)
 end
 
 -- Net-friendly format to table
-function VoiceOcclusion.Utils.TableFromNet()
+function ImmersiveVoiceChat.Utils.TableFromNet()
     local tbl = {}
     local count = net.ReadUInt(16)
     for i = 1, count do

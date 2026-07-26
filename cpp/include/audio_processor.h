@@ -1,13 +1,13 @@
-// Voice Occlusion Audio Processor Header
+// Immersive Voice Chat Audio Processor Header
 // Real-time DSP for voice occlusion effects
 
-#ifndef VOICE_OCCLUSION_AUDIO_PROCESSOR_H
-#define VOICE_OCCLUSION_AUDIO_PROCESSOR_H
+#ifndef IMMERSIVE_VOICE_CHAT_AUDIO_PROCESSOR_H
+#define IMMERSIVE_VOICE_CHAT_AUDIO_PROCESSOR_H
 
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-namespace VoiceOcclusion {
+namespace ImmersiveVoiceChat {
 
 class AudioProcessor
 {
@@ -58,6 +58,6 @@ private:
     float m_PrevSample;
 };
 
-} // namespace VoiceOcclusion
+} // namespace ImmersiveVoiceChat
 
-#endif // VOICE_OCCLUSION_AUDIO_PROCESSOR_H
+#endif // IMMERSIVE_VOICE_CHAT_AUDIO_PROCESSOR_H

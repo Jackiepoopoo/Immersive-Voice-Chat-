@@ -1,4 +1,4 @@
-// Voice Occlusion Audio Processor
+// Immersive Voice Chat Audio Processor
 // Handles real-time DSP for voice occlusion effects
 
 #include "audio_processor.h"
@@ -6,7 +6,7 @@
 #include <cmath>
 #include <cstring>
 
-namespace VoiceOcclusion {
+namespace ImmersiveVoiceChat {
 
 // Static instance
 AudioProcessor* AudioProcessor::s_Instance = nullptr;
@@ -190,4 +190,4 @@ void AudioProcessor::ApplyMuffledEffect(float* buffer, int numSamples, int numCh
     }
 }
 
-} // namespace VoiceOcclusion
+} // namespace ImmersiveVoiceChat

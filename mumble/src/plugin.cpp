@@ -298,7 +298,7 @@ MUMBLE_PLUGIN_EXPORT void MUMBLE_PLUGIN_CALLING_CONVENTION mumble_shutdown() {
 }
 
 MUMBLE_PLUGIN_EXPORT struct MumbleStringWrapper MUMBLE_PLUGIN_CALLING_CONVENTION mumble_getName() {
-    static const char name[] = "Voice Occlusion";
+    static const char name[] = "Immersive Voice Chat";
     return { name, sizeof(name) - 1, false };
 }
 
@@ -321,7 +321,7 @@ MUMBLE_PLUGIN_EXPORT mumble_version_t MUMBLE_PLUGIN_CALLING_CONVENTION mumble_ge
 }
 
 MUMBLE_PLUGIN_EXPORT struct MumbleStringWrapper MUMBLE_PLUGIN_CALLING_CONVENTION mumble_getAuthor() {
-    static const char author[] = "VoiceOcclusion";
+    static const char author[] = "ImmersiveVoiceChat";
     return { author, sizeof(author) - 1, false };
 }
 
@@ -349,7 +349,7 @@ MUMBLE_PLUGIN_EXPORT bool MUMBLE_PLUGIN_CALLING_CONVENTION mumble_fetchPositiona
 MUMBLE_PLUGIN_EXPORT void MUMBLE_PLUGIN_CALLING_CONVENTION mumble_shutdownPositionalData() {}
 
 MUMBLE_PLUGIN_EXPORT struct MumbleStringWrapper MUMBLE_PLUGIN_CALLING_CONVENTION mumble_getPositionalDataContextPrefix() {
-    static const char prefix[] = "voiceocclusion";
+    static const char prefix[] = "immersivevoicechat";
     return { prefix, sizeof(prefix) - 1, false };
 }
 

@@ -1,4 +1,4 @@
-# Voice Occlusion Binary Module - Build Instructions
+# Immersive Voice Chat Binary Module - Build Instructions
 
 ## Do You Need This?
 
@@ -48,7 +48,7 @@ cmake --build . --config Release
 
 ```powershell
 # Copy the built DLL to Gmod
-Copy-Item "C:\Users\eiman\OneDrive\Documents\New OpenCode Project\voiceocclusion\cpp\build\Release\gmcl_voiceocclusion.dll" "C:\Program Files (x86)\Steam\steamapps\common\GarrysMod\garrysmod\lua\bin\"
+Copy-Item "C:\Users\eiman\OneDrive\Documents\New OpenCode Project\voiceocclusion\cpp\build\Release\gmcl_immersivevoicechat.dll" "C:\Program Files (x86)\Steam\steamapps\common\GarrysMod\garrysmod\lua\bin\"
 ```
 
 ## Troubleshooting
@@ -59,7 +59,7 @@ Copy-Item "C:\Users\eiman\OneDrive\Documents\New OpenCode Project\voiceocclusion
 
 **"gmod-module-base not found"** - Make sure you cloned the SDK and the path is correct.
 
-**Build succeeds but module doesn't load** - Check the DLL is named exactly `gmcl_voiceocclusion.dll` and is in `garrysmod/lua/bin/`.
+**Build succeeds but module doesn't load** - Check the DLL is named exactly `gmcl_immersivevoicechat.dll` and is in `garrysmod/lua/bin/`.
 
 ## Quick Test (No Build Required)
 
@@ -67,7 +67,7 @@ The addon works immediately without building anything. Just copy the `lua/` fold
 
 ```powershell
 # Copy Lua addon to Gmod
-Copy-Item -Recurse "C:\Users\eiman\OneDrive\Documents\New OpenCode Project\voiceocclusion\lua" "C:\Program Files (x86)\Steam\steamapps\common\GarrysMod\garrysmod\addons\voiceocclusion\lua"
+Copy-Item -Recurse "C:\Users\eiman\OneDrive\Documents\New OpenCode Project\voiceocclusion\lua" "C:\Program Files (x86)\Steam\steamapps\common\GarrysMod\garrysmod\addons\immersivevoicechat\lua"
 ```
 
 Then restart Garry's Mod and run `vo_settings` in console.

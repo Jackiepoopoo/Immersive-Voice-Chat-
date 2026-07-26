@@ -1,11 +1,11 @@
--- Voice Occlusion Server-Side Logic
+-- Immersive Voice Chat Server-Side Logic
 -- Core occlusion detection and client communication
 
-VoiceOcclusion.Server = VoiceOcclusion.Server or {}
-VoiceOcclusion.Server.PlayerState = {}
-VoiceOcclusion.Server.PlayerVoiceMode = {}
-VoiceOcclusion.Server.LastCheck = 0
-VoiceOcclusion.Server.ChecksThisTick = 0
+ImmersiveVoiceChat.Server = ImmersiveVoiceChat.Server or {}
+ImmersiveVoiceChat.Server.PlayerState = {}
+ImmersiveVoiceChat.Server.PlayerVoiceMode = {}
+ImmersiveVoiceChat.Server.LastCheck = 0
+ImmersiveVoiceChat.Server.ChecksThisTick = 0
 
 -- Indoor detection cache: key = position bucket, value = {indoor, roomSize, time}
 local indoorCache = {}
@@ -15,7 +15,7 @@ local prevPositions = {}
 local prevTickTime = 0
 
 -- Performance stats
-VoiceOcclusion.Server.Stats = {
+ImmersiveVoiceChat.Server.Stats = {
     tracesThisTick = 0,
     totalTraces = 0,
     cacheHits = 0,
@@ -30,17 +30,17 @@ local function getIndoorCacheKey(pos)
 end
 
 -- Detect if a position is indoors, returns indoorAmount and avgRoomSize
-function VoiceOcclusion.Server:DetectIndoor(pos)
+function ImmersiveVoiceChat.Server:DetectIndoor(pos)
     if not pos then return 0, 0 end
 
     local curTime = CurTime()
     local key = getIndoorCacheKey(pos)
     local cached = indoorCache[key]
-    if cached and (curTime - cached.time) < VoiceOcclusion.Config.IndoorCacheInterval then
-        VoiceOcclusion.Server.Stats.cacheHits = VoiceOcclusion.Server.Stats.cacheHits + 1
+    if cached and (curTime - cached.time) < ImmersiveVoiceChat.Config.IndoorCacheInterval then
+        ImmersiveVoiceChat.Server.Stats.cacheHits = ImmersiveVoiceChat.Server.Stats.cacheHits + 1
         return cached.indoor, cached.roomSize
     end
-    VoiceOcclusion.Server.Stats.cacheMisses = VoiceOcclusion.Server.Stats.cacheMisses + 1
+    ImmersiveVoiceChat.Server.Stats.cacheMisses = ImmersiveVoiceChat.Server.Stats.cacheMisses + 1
 
     local directions = {
         Vector(1, 0, 0),
@@ -59,7 +59,7 @@ function VoiceOcclusion.Server:DetectIndoor(pos)
         local tr = util.TraceLine({
             start = pos,
             endpos = pos + dir * traceLen,
-            mask = VoiceOcclusion.Config.TraceMask
+            mask = ImmersiveVoiceChat.Config.TraceMask
         })
         if tr.Hit and tr.HitWorld then
             hits = hits + 1
@@ -78,20 +78,20 @@ function VoiceOcclusion.Server:DetectIndoor(pos)
 end
 
 -- Calculate occlusion between two players
-function VoiceOcclusion.Server:CalculateOcclusion(speaker, listener)
+function ImmersiveVoiceChat.Server:CalculateOcclusion(speaker, listener)
     if not IsValid(speaker) or not IsValid(listener) then
         return nil, nil
     end
 
-    local speakerPos = VoiceOcclusion.Utils.GetHeadPosition(speaker)
-    local listenerPos = VoiceOcclusion.Utils.GetHeadPosition(listener)
+    local speakerPos = ImmersiveVoiceChat.Utils.GetHeadPosition(speaker)
+    local listenerPos = ImmersiveVoiceChat.Utils.GetHeadPosition(listener)
 
     if not speakerPos or not listenerPos then
         return nil, nil
     end
 
-    local dist = VoiceOcclusion.Utils.GetDistance(speakerPos, listenerPos)
-    if dist > VoiceOcclusion.Config.MaxDistance then
+    local dist = ImmersiveVoiceChat.Utils.GetDistance(speakerPos, listenerPos)
+    if dist > ImmersiveVoiceChat.Config.MaxDistance then
         return 1, dist, speakerPos
     end
 
@@ -99,17 +99,17 @@ function VoiceOcclusion.Server:CalculateOcclusion(speaker, listener)
         return 0, dist, speakerPos
     end
 
-    if VoiceOcclusion.Config.SkipFriendlyFire and
-       VoiceOcclusion.Utils.SameTeam(speaker, listener) then
-        return VoiceOcclusion.Config.MinOcclusion, dist, speakerPos
+    if ImmersiveVoiceChat.Config.SkipFriendlyFire and
+       ImmersiveVoiceChat.Utils.SameTeam(speaker, listener) then
+        return ImmersiveVoiceChat.Config.MinOcclusion, dist, speakerPos
     end
 
     -- Adaptive trace count based on distance
     local numTraces, coneAngle
-    if dist < VoiceOcclusion.Config.CloseRange then
+    if dist < ImmersiveVoiceChat.Config.CloseRange then
         numTraces = 12
         coneAngle = 25
-    elseif dist < VoiceOcclusion.Config.MediumRange then
+    elseif dist < ImmersiveVoiceChat.Config.MediumRange then
         numTraces = 7
         coneAngle = 15
     else
@@ -152,10 +152,10 @@ function VoiceOcclusion.Server:CalculateOcclusion(speaker, listener)
             start = speakerPos,
             endpos = speakerPos + trDir:Forward() * dist,
             filter = {speaker, listener},
-            mask = VoiceOcclusion.Config.TraceMask
+            mask = ImmersiveVoiceChat.Config.TraceMask
         })
 
-        VoiceOcclusion.Server.Stats.tracesThisTick = VoiceOcclusion.Server.Stats.tracesThisTick + 1
+        ImmersiveVoiceChat.Server.Stats.tracesThisTick = ImmersiveVoiceChat.Server.Stats.tracesThisTick + 1
 
         if tr.Hit then
             local isGlass = false
@@ -179,17 +179,17 @@ function VoiceOcclusion.Server:CalculateOcclusion(speaker, listener)
     end
 
     if hits == 0 and glassHits == 0 and doorHits == 0 then
-        return VoiceOcclusion.Config.MinOcclusion, dist, speakerPos
+        return ImmersiveVoiceChat.Config.MinOcclusion, dist, speakerPos
     end
 
     local blockage = hits / numTraces
-    local occlusion = VoiceOcclusion.Config.WallPenalty * blockage
+    local occlusion = ImmersiveVoiceChat.Config.WallPenalty * blockage
 
     local glassRatio = glassHits / numTraces
-    occlusion = occlusion + VoiceOcclusion.Config.GlassPenalty * glassRatio
+    occlusion = occlusion + ImmersiveVoiceChat.Config.GlassPenalty * glassRatio
 
     local doorRatio = doorHits / numTraces
-    occlusion = occlusion + VoiceOcclusion.Config.DoorPenalty * doorRatio
+    occlusion = occlusion + ImmersiveVoiceChat.Config.DoorPenalty * doorRatio
 
     -- Extra occlusion for thick walls (only when a solid wall was hit)
     if hits > 0 then
@@ -197,7 +197,7 @@ function VoiceOcclusion.Server:CalculateOcclusion(speaker, listener)
             start = speakerPos,
             endpos = listenerPos,
             filter = {speaker, listener},
-            mask = VoiceOcclusion.Config.TraceMask
+            mask = ImmersiveVoiceChat.Config.TraceMask
         })
 
         if trCenter.Hit then
@@ -205,7 +205,7 @@ function VoiceOcclusion.Server:CalculateOcclusion(speaker, listener)
                 start = trCenter.HitPos + trCenter.HitNormal * 1,
                 endpos = listenerPos,
                 filter = {speaker, listener},
-                mask = VoiceOcclusion.Config.TraceMask
+                mask = ImmersiveVoiceChat.Config.TraceMask
             })
 
             local wallThickness = 1
@@ -214,23 +214,23 @@ function VoiceOcclusion.Server:CalculateOcclusion(speaker, listener)
             end
 
             if wallThickness > 2 then
-                occlusion = occlusion + (wallThickness - 2) * VoiceOcclusion.Config.ThickWallBonus
+                occlusion = occlusion + (wallThickness - 2) * ImmersiveVoiceChat.Config.ThickWallBonus
             end
         end
     end
 
-    occlusion = VoiceOcclusion.Utils.Clamp(
+    occlusion = ImmersiveVoiceChat.Utils.Clamp(
         occlusion,
-        VoiceOcclusion.Config.MinOcclusion,
-        VoiceOcclusion.Config.MaxOcclusion
+        ImmersiveVoiceChat.Config.MinOcclusion,
+        ImmersiveVoiceChat.Config.MaxOcclusion
     )
 
     -- Apply voice mode occlusion multiplier
-    local mode = VoiceOcclusion.Server.PlayerVoiceMode[speaker:SteamID64()] or 1
-    local modeData = VoiceOcclusion.Config.VoiceModes[mode] or VoiceOcclusion.Config.VoiceModes[1]
-    occlusion = math.Clamp(occlusion * modeData.occlusionMult, VoiceOcclusion.Config.MinOcclusion, VoiceOcclusion.Config.MaxOcclusion)
+    local mode = ImmersiveVoiceChat.Server.PlayerVoiceMode[speaker:SteamID64()] or 1
+    local modeData = ImmersiveVoiceChat.Config.VoiceModes[mode] or ImmersiveVoiceChat.Config.VoiceModes[1]
+    occlusion = math.Clamp(occlusion * modeData.occlusionMult, ImmersiveVoiceChat.Config.MinOcclusion, ImmersiveVoiceChat.Config.MaxOcclusion)
 
-    if VoiceOcclusion.Config.DrawDebugTraces then
+    if ImmersiveVoiceChat.Config.DrawDebugTraces then
         local color = Color(255, 0, 0, 100)
         if occlusion < 0.5 then color = Color(255, 255, 0, 100) end
         if occlusion == 0 then color = Color(0, 255, 0, 100) end
@@ -264,34 +264,34 @@ end
 -- Detect if a player is underwater
 local function IsUnderwater(ply)
     if not IsValid(ply) then return false end
-    local pos = VoiceOcclusion.Utils.GetHeadPosition(ply) or ply:GetPos()
+    local pos = ImmersiveVoiceChat.Utils.GetHeadPosition(ply) or ply:GetPos()
     return bit.band(util.PointContents(pos), CONTENTS_WATER) == CONTENTS_WATER
 end
 
 -- Send occlusion data to a client (with delta compression)
-function VoiceOcclusion.Server:SendOcclusionToClient(speaker, listener, occlusion, dist, speakerPos, indoor, roomSize)
+function ImmersiveVoiceChat.Server:SendOcclusionToClient(speaker, listener, occlusion, dist, speakerPos, indoor, roomSize)
     if not IsValid(speaker) or not IsValid(listener) then
         return
     end
 
     if not speakerPos then
-        speakerPos = VoiceOcclusion.Utils.GetHeadPosition(speaker)
+        speakerPos = ImmersiveVoiceChat.Utils.GetHeadPosition(speaker)
         if not speakerPos then return end
     end
 
     local speakerID = speaker:SteamID64()
     local listenerID = listener:SteamID64()
 
-    VoiceOcclusion.Server.PlayerState[listenerID] =
-        VoiceOcclusion.Server.PlayerState[listenerID] or {}
+    ImmersiveVoiceChat.Server.PlayerState[listenerID] =
+        ImmersiveVoiceChat.Server.PlayerState[listenerID] or {}
 
     -- Delta compression: only send if occlusion changed significantly
-    local prevOcc = VoiceOcclusion.Server.PlayerState[listenerID][speakerID]
-    if prevOcc ~= nil and math.abs(occlusion - prevOcc) < VoiceOcclusion.Config.DeltaThreshold then
+    local prevOcc = ImmersiveVoiceChat.Server.PlayerState[listenerID][speakerID]
+    if prevOcc ~= nil and math.abs(occlusion - prevOcc) < ImmersiveVoiceChat.Config.DeltaThreshold then
         return
     end
 
-    VoiceOcclusion.Server.PlayerState[listenerID][speakerID] = occlusion
+    ImmersiveVoiceChat.Server.PlayerState[listenerID][speakerID] = occlusion
 
     -- Calculate velocity
     local vx, vy, vz = GetPlayerVelocity(speaker)
@@ -300,7 +300,7 @@ function VoiceOcclusion.Server:SendOcclusionToClient(speaker, listener, occlusio
     local underwater = IsUnderwater(speaker) and 1 or 0
 
     -- Get speaker's voice mode
-    local voiceMode = VoiceOcclusion.Server.PlayerVoiceMode[speaker:SteamID64()] or 1
+    local voiceMode = ImmersiveVoiceChat.Server.PlayerVoiceMode[speaker:SteamID64()] or 1
 
     net.Start("vo_occlusion_update")
         net.WriteEntity(speaker)
@@ -318,17 +318,17 @@ function VoiceOcclusion.Server:SendOcclusionToClient(speaker, listener, occlusio
 end
 
 -- Process a single tick of occlusion checks
-function VoiceOcclusion.Server:ProcessTick()
+function ImmersiveVoiceChat.Server:ProcessTick()
     local curTime = CurTime()
     local tickStart = SysTime()
 
-    if curTime - VoiceOcclusion.Server.LastCheck < VoiceOcclusion.Config.TraceInterval then
+    if curTime - ImmersiveVoiceChat.Server.LastCheck < ImmersiveVoiceChat.Config.TraceInterval then
         return
     end
 
-    VoiceOcclusion.Server.LastCheck = curTime
-    VoiceOcclusion.Server.ChecksThisTick = 0
-    VoiceOcclusion.Server.Stats.tracesThisTick = 0
+    ImmersiveVoiceChat.Server.LastCheck = curTime
+    ImmersiveVoiceChat.Server.ChecksThisTick = 0
+    ImmersiveVoiceChat.Server.Stats.tracesThisTick = 0
 
     -- Update velocity tick timing
     if prevTickTime == 0 then prevTickTime = curTime end
@@ -344,13 +344,13 @@ function VoiceOcclusion.Server:ProcessTick()
             local speaker = players[i]
             local listener = players[j]
 
-            if VoiceOcclusion.Server.ChecksThisTick >=
-               VoiceOcclusion.Config.MaxChecksPerTick then
+            if ImmersiveVoiceChat.Server.ChecksThisTick >=
+               ImmersiveVoiceChat.Config.MaxChecksPerTick then
                 goto done
             end
 
-            VoiceOcclusion.Server.ChecksThisTick =
-                VoiceOcclusion.Server.ChecksThisTick + 1
+            ImmersiveVoiceChat.Server.ChecksThisTick =
+                ImmersiveVoiceChat.Server.ChecksThisTick + 1
 
             local occAtoB, distAtoB, posA = self:CalculateOcclusion(speaker, listener)
             if occAtoB ~= nil then
@@ -391,25 +391,25 @@ function VoiceOcclusion.Server:ProcessTick()
 
     -- Update performance stats
     local elapsed = (SysTime() - tickStart) * 1000
-    VoiceOcclusion.Server.Stats.lastTickMs = elapsed
-    VoiceOcclusion.Server.Stats.totalTraces = VoiceOcclusion.Server.Stats.totalTraces + VoiceOcclusion.Server.Stats.tracesThisTick
-    VoiceOcclusion.Server.Stats.avgTickMs = VoiceOcclusion.Server.Stats.avgTickMs * 0.9 + elapsed * 0.1
+    ImmersiveVoiceChat.Server.Stats.lastTickMs = elapsed
+    ImmersiveVoiceChat.Server.Stats.totalTraces = ImmersiveVoiceChat.Server.Stats.totalTraces + ImmersiveVoiceChat.Server.Stats.tracesThisTick
+    ImmersiveVoiceChat.Server.Stats.avgTickMs = ImmersiveVoiceChat.Server.Stats.avgTickMs * 0.9 + elapsed * 0.1
 end
 
 -- Clean up player state when they disconnect
-function VoiceOcclusion.Server:PlayerDisconnected(ply)
+function ImmersiveVoiceChat.Server:PlayerDisconnected(ply)
     local plyID = ply:SteamID64()
-    VoiceOcclusion.Server.PlayerState[plyID] = nil
-    VoiceOcclusion.Server.PlayerVoiceMode[plyID] = nil
+    ImmersiveVoiceChat.Server.PlayerState[plyID] = nil
+    ImmersiveVoiceChat.Server.PlayerVoiceMode[plyID] = nil
     prevPositions[plyID] = nil
 
-    for otherID, state in pairs(VoiceOcclusion.Server.PlayerState) do
+    for otherID, state in pairs(ImmersiveVoiceChat.Server.PlayerState) do
         state[plyID] = nil
     end
 end
 
 -- Get occlusion data for a specific player pair (for API access)
-function VoiceOcclusion.Server:GetOcclusion(speaker, listener)
+function ImmersiveVoiceChat.Server:GetOcclusion(speaker, listener)
     if not IsValid(speaker) or not IsValid(listener) then
         return nil
     end
@@ -417,8 +417,8 @@ function VoiceOcclusion.Server:GetOcclusion(speaker, listener)
     local speakerID = speaker:SteamID64()
     local listenerID = listener:SteamID64()
 
-    if VoiceOcclusion.Server.PlayerState[listenerID] then
-        return VoiceOcclusion.Server.PlayerState[listenerID][speakerID]
+    if ImmersiveVoiceChat.Server.PlayerState[listenerID] then
+        return ImmersiveVoiceChat.Server.PlayerState[listenerID][speakerID]
     end
 
     return nil
@@ -427,8 +427,8 @@ end
 -- Console command to force sync all players
 concommand.Add("vo_resync", function(ply, cmd, args)
     if not IsValid(ply) or ply:IsAdmin() then
-        VoiceOcclusion.Server.PlayerState = {}
+        ImmersiveVoiceChat.Server.PlayerState = {}
         indoorCache = {}
-        print("[VoiceOcclusion] Player state cleared, will resync on next check")
+        print("[ImmersiveVoiceChat] Player state cleared, will resync on next check")
     end
 end)

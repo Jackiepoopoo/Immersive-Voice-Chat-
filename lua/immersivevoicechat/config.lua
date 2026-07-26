@@ -1,7 +1,7 @@
--- Voice Occlusion Configuration
+-- Immersive Voice Chat Configuration
 -- Default settings that can be overridden by server operators
 
-VoiceOcclusion.Config = {
+ImmersiveVoiceChat.Config = {
     -- Occlusion detection
     MaxDistance = 1200,              -- Maximum voice range in Source units
     TraceInterval = 0.3,            -- How often to run tracelines (seconds)
@@ -70,8 +70,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.MaxDistance = math.Clamp(val, 100, 5000)
-                print("[VoiceOcclusion] MaxDistance set to: " .. VoiceOcclusion.Config.MaxDistance)
+                ImmersiveVoiceChat.Config.MaxDistance = math.Clamp(val, 100, 5000)
+                print("[ImmersiveVoiceChat] MaxDistance set to: " .. ImmersiveVoiceChat.Config.MaxDistance)
             end
         end
     end)
@@ -80,8 +80,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.TraceInterval = math.Clamp(val, 0.1, 2.0)
-                print("[VoiceOcclusion] TraceInterval set to: " .. VoiceOcclusion.Config.TraceInterval)
+                ImmersiveVoiceChat.Config.TraceInterval = math.Clamp(val, 0.1, 2.0)
+                print("[ImmersiveVoiceChat] TraceInterval set to: " .. ImmersiveVoiceChat.Config.TraceInterval)
             end
         end
     end)
@@ -90,8 +90,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.ProximityMinDist = math.Clamp(val, 10, 500)
-                print("[VoiceOcclusion] ProximityMinDist set to: " .. VoiceOcclusion.Config.ProximityMinDist)
+                ImmersiveVoiceChat.Config.ProximityMinDist = math.Clamp(val, 10, 500)
+                print("[ImmersiveVoiceChat] ProximityMinDist set to: " .. ImmersiveVoiceChat.Config.ProximityMinDist)
             end
         end
     end)
@@ -100,8 +100,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.ProximityMaxDist = math.Clamp(val, 200, 5000)
-                print("[VoiceOcclusion] ProximityMaxDist set to: " .. VoiceOcclusion.Config.ProximityMaxDist)
+                ImmersiveVoiceChat.Config.ProximityMaxDist = math.Clamp(val, 200, 5000)
+                print("[ImmersiveVoiceChat] ProximityMaxDist set to: " .. ImmersiveVoiceChat.Config.ProximityMaxDist)
             end
         end
     end)
@@ -110,8 +110,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.WallPenalty = math.Clamp(val, 0, 1)
-                print("[VoiceOcclusion] WallPenalty set to: " .. VoiceOcclusion.Config.WallPenalty)
+                ImmersiveVoiceChat.Config.WallPenalty = math.Clamp(val, 0, 1)
+                print("[ImmersiveVoiceChat] WallPenalty set to: " .. ImmersiveVoiceChat.Config.WallPenalty)
             end
         end
     end)
@@ -120,8 +120,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.GlassPenalty = math.Clamp(val, 0, 0.5)
-                print("[VoiceOcclusion] GlassPenalty set to: " .. VoiceOcclusion.Config.GlassPenalty)
+                ImmersiveVoiceChat.Config.GlassPenalty = math.Clamp(val, 0, 0.5)
+                print("[ImmersiveVoiceChat] GlassPenalty set to: " .. ImmersiveVoiceChat.Config.GlassPenalty)
             end
         end
     end)
@@ -130,16 +130,16 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.ThickWallBonus = math.Clamp(val, 0, 0.5)
-                print("[VoiceOcclusion] ThickWallBonus set to: " .. VoiceOcclusion.Config.ThickWallBonus)
+                ImmersiveVoiceChat.Config.ThickWallBonus = math.Clamp(val, 0, 0.5)
+                print("[ImmersiveVoiceChat] ThickWallBonus set to: " .. ImmersiveVoiceChat.Config.ThickWallBonus)
             end
         end
     end)
 
     concommand.Add("vo_debug", function(ply, cmd, args)
         if not IsValid(ply) or ply:IsAdmin() then
-            VoiceOcclusion.Config.DebugMode = not VoiceOcclusion.Config.DebugMode
-            print("[VoiceOcclusion] DebugMode: " .. tostring(VoiceOcclusion.Config.DebugMode))
+            ImmersiveVoiceChat.Config.DebugMode = not ImmersiveVoiceChat.Config.DebugMode
+            print("[ImmersiveVoiceChat] DebugMode: " .. tostring(ImmersiveVoiceChat.Config.DebugMode))
         end
     end)
 
@@ -147,8 +147,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.VoiceModes[0].maxDistMult = math.Clamp(val, 0.1, 1.0)
-                print("[VoiceOcclusion] Whisper maxDistMult: " .. VoiceOcclusion.Config.VoiceModes[0].maxDistMult)
+                ImmersiveVoiceChat.Config.VoiceModes[0].maxDistMult = math.Clamp(val, 0.1, 1.0)
+                print("[ImmersiveVoiceChat] Whisper maxDistMult: " .. ImmersiveVoiceChat.Config.VoiceModes[0].maxDistMult)
             end
         end
     end)
@@ -157,8 +157,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.VoiceModes[0].occlusionMult = math.Clamp(val, 0.1, 3.0)
-                print("[VoiceOcclusion] Whisper occlusionMult: " .. VoiceOcclusion.Config.VoiceModes[0].occlusionMult)
+                ImmersiveVoiceChat.Config.VoiceModes[0].occlusionMult = math.Clamp(val, 0.1, 3.0)
+                print("[ImmersiveVoiceChat] Whisper occlusionMult: " .. ImmersiveVoiceChat.Config.VoiceModes[0].occlusionMult)
             end
         end
     end)
@@ -167,8 +167,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.VoiceModes[2].maxDistMult = math.Clamp(val, 1.0, 5.0)
-                print("[VoiceOcclusion] Yell maxDistMult: " .. VoiceOcclusion.Config.VoiceModes[2].maxDistMult)
+                ImmersiveVoiceChat.Config.VoiceModes[2].maxDistMult = math.Clamp(val, 1.0, 5.0)
+                print("[ImmersiveVoiceChat] Yell maxDistMult: " .. ImmersiveVoiceChat.Config.VoiceModes[2].maxDistMult)
             end
         end
     end)
@@ -177,8 +177,8 @@ if SERVER then
         if not IsValid(ply) or ply:IsAdmin() then
             local val = tonumber(args[1])
             if val then
-                VoiceOcclusion.Config.VoiceModes[2].occlusionMult = math.Clamp(val, 0.1, 2.0)
-                print("[VoiceOcclusion] Yell occlusionMult: " .. VoiceOcclusion.Config.VoiceModes[2].occlusionMult)
+                ImmersiveVoiceChat.Config.VoiceModes[2].occlusionMult = math.Clamp(val, 0.1, 2.0)
+                print("[ImmersiveVoiceChat] Yell occlusionMult: " .. ImmersiveVoiceChat.Config.VoiceModes[2].occlusionMult)
             end
         end
     end)

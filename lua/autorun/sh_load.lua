@@ -1,21 +1,21 @@
--- Voice Occlusion System
+-- Immersive Voice Chat
 -- Shared loader that initializes the addon on both client and server
 
-VoiceOcclusion = VoiceOcclusion or {}
-VoiceOcclusion.Version = "1.0.0"
+ImmersiveVoiceChat = ImmersiveVoiceChat or {}
+ImmersiveVoiceChat.Version = "1.0.0"
 
 -- Load shared config first
-include("voiceocclusion/config.lua")
+include("immersivevoicechat/config.lua")
 
 if SERVER then
-    AddCSLuaFile("voiceocclusion/config.lua")
-    AddCSLuaFile("voiceocclusion/shared.lua")
-    AddCSLuaFile("voiceocclusion/client/main.lua")
-    AddCSLuaFile("voiceocclusion/client/cl_module.lua")
+    AddCSLuaFile("immersivevoicechat/config.lua")
+    AddCSLuaFile("immersivevoicechat/shared.lua")
+    AddCSLuaFile("immersivevoicechat/client/main.lua")
+    AddCSLuaFile("immersivevoicechat/client/cl_module.lua")
     
-    include("voiceocclusion/shared.lua")
-    include("voiceocclusion/server/main.lua")
-    include("voiceocclusion/server/hooks.lua")
+    include("immersivevoicechat/shared.lua")
+    include("immersivevoicechat/server/main.lua")
+    include("immersivevoicechat/server/hooks.lua")
     
     -- Register net strings
     util.AddNetworkString("vo_occlusion_update")
@@ -24,13 +24,13 @@ if SERVER then
     util.AddNetworkString("vo_module_status")
     util.AddNetworkString("vo_voice_mode")
     
-    print("[VoiceOcclusion] Server-side loaded (v" .. VoiceOcclusion.Version .. ")")
+    print("[ImmersiveVoiceChat] Server-side loaded (v" .. ImmersiveVoiceChat.Version .. ")")
 end
 
 if CLIENT then
-    include("voiceocclusion/shared.lua")
-    include("voiceocclusion/client/main.lua")
-    include("voiceocclusion/client/cl_module.lua")
+    include("immersivevoicechat/shared.lua")
+    include("immersivevoicechat/client/main.lua")
+    include("immersivevoicechat/client/cl_module.lua")
     
-    print("[VoiceOcclusion] Client-side loaded (v" .. VoiceOcclusion.Version .. ")")
+    print("[ImmersiveVoiceChat] Client-side loaded (v" .. ImmersiveVoiceChat.Version .. ")")
 end

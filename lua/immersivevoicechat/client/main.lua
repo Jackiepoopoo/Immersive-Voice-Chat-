@@ -1,10 +1,10 @@
--- Voice Occlusion Client-Side Main Logic
+-- Immersive Voice Chat Client-Side Main Logic
 -- Handles receiving occlusion data and applying effects
 
-VoiceOcclusion.Client = VoiceOcclusion.Client or {}
-VoiceOcclusion.Client.Enabled = true
-VoiceOcclusion.Client.StoredOcclusion = {}
-VoiceOcclusion.Client.Config = {
+ImmersiveVoiceChat.Client = ImmersiveVoiceChat.Client or {}
+ImmersiveVoiceChat.Client.Enabled = true
+ImmersiveVoiceChat.Client.StoredOcclusion = {}
+ImmersiveVoiceChat.Client.Config = {
     MaxDistance = 5000,
     FallbackMinVolume = 0.15,
     EnableVolumeFallback = true
@@ -195,17 +195,17 @@ local function CreateThinSlider(parent, label, description, getFunc, setFunc, mi
 end
 
 -- Client-side performance stats
-VoiceOcclusion.Client.Stats = {
+ImmersiveVoiceChat.Client.Stats = {
     updatesReceived = 0,
     lastUpdateMs = 0,
 }
 
 -- HUD display settings
-VoiceOcclusion.Client.HUDEnabled = false
-VoiceOcclusion.Client.HUDTarget = nil  -- Entity to show occlusion for
+ImmersiveVoiceChat.Client.HUDEnabled = false
+ImmersiveVoiceChat.Client.HUDTarget = nil  -- Entity to show occlusion for
 
 -- Voice mode system
-VoiceOcclusion.Client.VoiceMode = 1  -- 0=Whisper, 1=Talk, 2=Yell
+ImmersiveVoiceChat.Client.VoiceMode = 1  -- 0=Whisper, 1=Talk, 2=Yell
 local modeChangeTime = 0
 local MODE_FADE_TIME = 2.0
 local MODE_NAMES = { [0] = "WHISPER", [1] = "TALK", [2] = "YELL" }
@@ -217,36 +217,36 @@ local MODE_COLORS = {
 
 local function SendVoiceModeToServer()
     net.Start("vo_voice_mode")
-        net.WriteUInt(VoiceOcclusion.Client.VoiceMode, 2)
+        net.WriteUInt(ImmersiveVoiceChat.Client.VoiceMode, 2)
     net.SendToServer()
 end
 
 local function SendVoiceModeToModule()
-    if not VoiceOcclusion.Client.ModuleLoaded or not voiceocclusion then return end
+    if not ImmersiveVoiceChat.Client.ModuleLoaded or not immersivevoicechat then return end
     -- Re-push all player data with updated voiceMode
     local data = {}
-    for sid, occ in pairs(VoiceOcclusion.Client.StoredOcclusion) do
+    for sid, occ in pairs(ImmersiveVoiceChat.Client.StoredOcclusion) do
         for _, p in ipairs(player.GetAll()) do
             if IsValid(p) and p:SteamID64() == sid then
-                local dist = VoiceOcclusion.Client.StoredDistance[sid] or 0
-                local pos = VoiceOcclusion.Client.StoredPosition[sid]
-                local ind = VoiceOcclusion.Client.StoredIndoor[sid] or 0
-                local room = VoiceOcclusion.Client.StoredRoomSize[sid] or 0
-                local vel = VoiceOcclusion.Client.StoredVelocity[sid] or Vector(0,0,0)
-                local uw = VoiceOcclusion.Client.StoredUnderwater[sid] and 1 or 0
+                local dist = ImmersiveVoiceChat.Client.StoredDistance[sid] or 0
+                local pos = ImmersiveVoiceChat.Client.StoredPosition[sid]
+                local ind = ImmersiveVoiceChat.Client.StoredIndoor[sid] or 0
+                local room = ImmersiveVoiceChat.Client.StoredRoomSize[sid] or 0
+                local vel = ImmersiveVoiceChat.Client.StoredVelocity[sid] or Vector(0,0,0)
+                local uw = ImmersiveVoiceChat.Client.StoredUnderwater[sid] and 1 or 0
                 local px, py, pz = 0, 0, 0
                 if pos then px, py, pz = pos.x, pos.y, pos.z end
-                data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, VoiceOcclusion.Client.VoiceMode}
+                data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, ImmersiveVoiceChat.Client.VoiceMode}
                 break
             end
         end
     end
-    voiceocclusion.SetPlayerOcclusions(data)
+    immersivevoicechat.SetPlayerOcclusions(data)
 end
 
 concommand.Add("vo_cyclemode", function()
-    local cur = VoiceOcclusion.Client.VoiceMode
-    VoiceOcclusion.Client.VoiceMode = (cur + 1) % 3
+    local cur = ImmersiveVoiceChat.Client.VoiceMode
+    ImmersiveVoiceChat.Client.VoiceMode = (cur + 1) % 3
     modeChangeTime = CurTime()
     SendVoiceModeToServer()
     SendVoiceModeToModule()
@@ -255,7 +255,7 @@ end)
 concommand.Add("vo_setmode", function(ply, cmd, args)
     local mode = tonumber(args[1])
     if mode and mode >= 0 and mode <= 2 then
-        VoiceOcclusion.Client.VoiceMode = mode
+        ImmersiveVoiceChat.Client.VoiceMode = mode
         modeChangeTime = CurTime()
         SendVoiceModeToServer()
         SendVoiceModeToModule()
@@ -279,35 +279,35 @@ net.Receive("vo_occlusion_update", function()
     
     if IsValid(speaker) then
         local steamID = speaker:SteamID64()
-        VoiceOcclusion.Client.StoredOcclusion[steamID] = occlusion
-        VoiceOcclusion.Client.StoredDistance = VoiceOcclusion.Client.StoredDistance or {}
-        VoiceOcclusion.Client.StoredDistance[steamID] = distance
-        VoiceOcclusion.Client.StoredPosition = VoiceOcclusion.Client.StoredPosition or {}
-        VoiceOcclusion.Client.StoredPosition[steamID] = speakerPos
-        VoiceOcclusion.Client.StoredIndoor = VoiceOcclusion.Client.StoredIndoor or {}
-        VoiceOcclusion.Client.StoredIndoor[steamID] = indoor
-        VoiceOcclusion.Client.StoredRoomSize = VoiceOcclusion.Client.StoredRoomSize or {}
-        VoiceOcclusion.Client.StoredRoomSize[steamID] = roomSize
-        VoiceOcclusion.Client.StoredVelocity = VoiceOcclusion.Client.StoredVelocity or {}
-        VoiceOcclusion.Client.StoredVelocity[steamID] = Vector(vx, vy, vz)
-        VoiceOcclusion.Client.StoredUnderwater = VoiceOcclusion.Client.StoredUnderwater or {}
-        VoiceOcclusion.Client.StoredUnderwater[steamID] = underwater
-        VoiceOcclusion.Client.StoredVoiceMode = VoiceOcclusion.Client.StoredVoiceMode or {}
-        VoiceOcclusion.Client.StoredVoiceMode[steamID] = voiceMode
+        ImmersiveVoiceChat.Client.StoredOcclusion[steamID] = occlusion
+        ImmersiveVoiceChat.Client.StoredDistance = ImmersiveVoiceChat.Client.StoredDistance or {}
+        ImmersiveVoiceChat.Client.StoredDistance[steamID] = distance
+        ImmersiveVoiceChat.Client.StoredPosition = ImmersiveVoiceChat.Client.StoredPosition or {}
+        ImmersiveVoiceChat.Client.StoredPosition[steamID] = speakerPos
+        ImmersiveVoiceChat.Client.StoredIndoor = ImmersiveVoiceChat.Client.StoredIndoor or {}
+        ImmersiveVoiceChat.Client.StoredIndoor[steamID] = indoor
+        ImmersiveVoiceChat.Client.StoredRoomSize = ImmersiveVoiceChat.Client.StoredRoomSize or {}
+        ImmersiveVoiceChat.Client.StoredRoomSize[steamID] = roomSize
+        ImmersiveVoiceChat.Client.StoredVelocity = ImmersiveVoiceChat.Client.StoredVelocity or {}
+        ImmersiveVoiceChat.Client.StoredVelocity[steamID] = Vector(vx, vy, vz)
+        ImmersiveVoiceChat.Client.StoredUnderwater = ImmersiveVoiceChat.Client.StoredUnderwater or {}
+        ImmersiveVoiceChat.Client.StoredUnderwater[steamID] = underwater
+        ImmersiveVoiceChat.Client.StoredVoiceMode = ImmersiveVoiceChat.Client.StoredVoiceMode or {}
+        ImmersiveVoiceChat.Client.StoredVoiceMode[steamID] = voiceMode
         
         -- Push all occlusion data to binary module for Mumble shared memory
-        if VoiceOcclusion.Client.ModuleLoaded and voiceocclusion then
+        if ImmersiveVoiceChat.Client.ModuleLoaded and immersivevoicechat then
             local data = {}
-            for sid, occ in pairs(VoiceOcclusion.Client.StoredOcclusion) do
+            for sid, occ in pairs(ImmersiveVoiceChat.Client.StoredOcclusion) do
                 for _, p in ipairs(player.GetAll()) do
                     if IsValid(p) and p:SteamID64() == sid then
-                        local dist = VoiceOcclusion.Client.StoredDistance[sid] or 0
-                        local pos = VoiceOcclusion.Client.StoredPosition[sid]
-                        local ind = VoiceOcclusion.Client.StoredIndoor[sid] or 0
-                        local room = VoiceOcclusion.Client.StoredRoomSize[sid] or 0
-                        local vel = VoiceOcclusion.Client.StoredVelocity[sid] or Vector(0,0,0)
-                        local uw = VoiceOcclusion.Client.StoredUnderwater[sid] and 1 or 0
-                        local vmode = VoiceOcclusion.Client.StoredVoiceMode[sid] or 1
+                        local dist = ImmersiveVoiceChat.Client.StoredDistance[sid] or 0
+                        local pos = ImmersiveVoiceChat.Client.StoredPosition[sid]
+                        local ind = ImmersiveVoiceChat.Client.StoredIndoor[sid] or 0
+                        local room = ImmersiveVoiceChat.Client.StoredRoomSize[sid] or 0
+                        local vel = ImmersiveVoiceChat.Client.StoredVelocity[sid] or Vector(0,0,0)
+                        local uw = ImmersiveVoiceChat.Client.StoredUnderwater[sid] and 1 or 0
+                        local vmode = ImmersiveVoiceChat.Client.StoredVoiceMode[sid] or 1
                         local px, py, pz = 0, 0, 0
                         if pos then px, py, pz = pos.x, pos.y, pos.z end
                         data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, vmode}
@@ -315,34 +315,34 @@ net.Receive("vo_occlusion_update", function()
                     end
                 end
             end
-            voiceocclusion.SetPlayerOcclusions(data)
+            immersivevoicechat.SetPlayerOcclusions(data)
             
             -- Set listener position for 3D audio
             local lp = LocalPlayer():GetPos()
             local la = LocalPlayer():GetAngles()
-            local listenerIndoor, listenerRoom = VoiceOcclusion.Client:DetectIndoorLocal()
-            local surfaceAbsorb = VoiceOcclusion.Client:DetectSurfaceAbsorb()
+            local listenerIndoor, listenerRoom = ImmersiveVoiceChat.Client:DetectIndoorLocal()
+            local surfaceAbsorb = ImmersiveVoiceChat.Client:DetectSurfaceAbsorb()
             local listenerUnderwater = bit.band(util.PointContents(lp + Vector(0, 0, 64)), CONTENTS_WATER) == CONTENTS_WATER and 1 or 0
-            voiceocclusion.SetListenerPosition(lp.x, lp.y, lp.z, la.y, la.p, la.r, listenerIndoor, listenerRoom, surfaceAbsorb, listenerUnderwater)
+            immersivevoicechat.SetListenerPosition(lp.x, lp.y, lp.z, la.y, la.p, la.r, listenerIndoor, listenerRoom, surfaceAbsorb, listenerUnderwater)
         end
     end
     
     -- Update stats
-    VoiceOcclusion.Client.Stats.updatesReceived = VoiceOcclusion.Client.Stats.updatesReceived + 1
-    VoiceOcclusion.Client.Stats.lastUpdateMs = (SysTime() - tickStart) * 1000
+    ImmersiveVoiceChat.Client.Stats.updatesReceived = ImmersiveVoiceChat.Client.Stats.updatesReceived + 1
+    ImmersiveVoiceChat.Client.Stats.lastUpdateMs = (SysTime() - tickStart) * 1000
 end)
 
 -- Receive config sync from server
 net.Receive("vo_config_sync", function()
-    VoiceOcclusion.Client.Config.MaxDistance = net.ReadUInt(16)
-    VoiceOcclusion.Client.Config.FallbackMinVolume = net.ReadFloat()
-    VoiceOcclusion.Client.Config.EnableVolumeFallback = net.ReadBit() == 1
+    ImmersiveVoiceChat.Client.Config.MaxDistance = net.ReadUInt(16)
+    ImmersiveVoiceChat.Client.Config.FallbackMinVolume = net.ReadFloat()
+    ImmersiveVoiceChat.Client.Config.EnableVolumeFallback = net.ReadBit() == 1
     
-    VoiceOcclusion.Utils.DebugPrint("Config synced from server")
+    ImmersiveVoiceChat.Utils.DebugPrint("Config synced from server")
 end)
 
 -- Get stored occlusion for a player
-function VoiceOcclusion.Client:GetOcclusion(ply)
+function ImmersiveVoiceChat.Client:GetOcclusion(ply)
     if not IsValid(ply) then return 0 end
     
     local steamID = ply:SteamID64()
@@ -350,29 +350,29 @@ function VoiceOcclusion.Client:GetOcclusion(ply)
 end
 
 -- Volume fallback for players without binary module
-hook.Add("EntityEmitSound", "VoiceOcclusion_Fallback", function(data)
+hook.Add("EntityEmitSound", "ImmersiveVoiceChat_Fallback", function(data)
     -- Only process if module is not loaded
-    if VoiceOcclusion.Client.ModuleLoaded then
+    if ImmersiveVoiceChat.Client.ModuleLoaded then
         return
     end
     
-    if not VoiceOcclusion.Client.Config.EnableVolumeFallback then
+    if not ImmersiveVoiceChat.Client.Config.EnableVolumeFallback then
         return
     end
     
     -- Check if this is a player voice sound
     if data.Entity and data.Entity:IsPlayer() then
-        local occlusion = VoiceOcclusion.Client:GetOcclusion(data.Entity)
+        local occlusion = ImmersiveVoiceChat.Client:GetOcclusion(data.Entity)
         
         if occlusion > 0 then
             -- Calculate reduced volume
-            local minVol = VoiceOcclusion.Client.Config.FallbackMinVolume
+            local minVol = ImmersiveVoiceChat.Client.Config.FallbackMinVolume
             local volumeMultiplier = 1 - (occlusion * (1 - minVol))
             
             data.Volume = data.Volume * volumeMultiplier
             
-            VoiceOcclusion.Utils.DebugPrint(
-                "Fallback: " .. VoiceOcclusion.Utils.PlayerName(data.Entity) .. 
+            ImmersiveVoiceChat.Utils.DebugPrint(
+                "Fallback: " .. ImmersiveVoiceChat.Utils.PlayerName(data.Entity) .. 
                 " volume=" .. string.format("%.2f", data.Volume)
             )
             
@@ -382,7 +382,7 @@ hook.Add("EntityEmitSound", "VoiceOcclusion_Fallback", function(data)
 end)
 
 -- Request config sync when joining
-hook.Add("InitPostEntity", "VoiceOcclusion_RequestSync", function()
+hook.Add("InitPostEntity", "ImmersiveVoiceChat_RequestSync", function()
     timer.Simple(1, function()
         net.Start("vo_request_sync")
         net.SendToServer()
@@ -395,28 +395,28 @@ end)
 
 -- Console commands
 concommand.Add("vo_client_status", function()
-    print("=== Voice Occlusion Client Status ===")
-    print("Module Loaded: " .. tostring(VoiceOcclusion.Client.ModuleLoaded))
-    print("Enabled: " .. tostring(VoiceOcclusion.Client.Enabled))
-    print("Stored Occlusion Entries: " .. table.Count(VoiceOcclusion.Client.StoredOcclusion))
+    print("=== Immersive Voice Chat Client Status ===")
+    print("Module Loaded: " .. tostring(ImmersiveVoiceChat.Client.ModuleLoaded))
+    print("Enabled: " .. tostring(ImmersiveVoiceChat.Client.Enabled))
+    print("Stored Occlusion Entries: " .. table.Count(ImmersiveVoiceChat.Client.StoredOcclusion))
     
     print("\nCurrent Occlusions:")
-    for steamID, occlusion in pairs(VoiceOcclusion.Client.StoredOcclusion) do
+    for steamID, occlusion in pairs(ImmersiveVoiceChat.Client.StoredOcclusion) do
         print("  " .. steamID .. ": " .. string.format("%.2f", occlusion))
     end
     
     print("\nConfig:")
-    print("  MaxDistance: " .. VoiceOcclusion.Client.Config.MaxDistance)
-    print("  FallbackMinVolume: " .. VoiceOcclusion.Client.Config.FallbackMinVolume)
-    print("  EnableVolumeFallback: " .. tostring(VoiceOcclusion.Client.Config.EnableVolumeFallback))
+    print("  MaxDistance: " .. ImmersiveVoiceChat.Client.Config.MaxDistance)
+    print("  FallbackMinVolume: " .. ImmersiveVoiceChat.Client.Config.FallbackMinVolume)
+    print("  EnableVolumeFallback: " .. tostring(ImmersiveVoiceChat.Client.Config.EnableVolumeFallback))
 end)
 
 concommand.Add("vo_client_clear", function()
-    VoiceOcclusion.Client.StoredOcclusion = {}
-    print("[VoiceOcclusion] Client occlusion data cleared")
+    ImmersiveVoiceChat.Client.StoredOcclusion = {}
+    print("[ImmersiveVoiceChat] Client occlusion data cleared")
 end)
 
-function VoiceOcclusion.Client:DetectIndoorLocal()
+function ImmersiveVoiceChat.Client:DetectIndoorLocal()
     local lp = LocalPlayer()
     if not IsValid(lp) then return 0, 0 end
     local pos = lp:GetPos() + Vector(0, 0, 64)
@@ -445,7 +445,7 @@ end
 
 -- Detect surface material at listener's feet for reverb character
 -- Returns 0-1 where 0 = reflective (concrete/tile), 1 = absorptive (carpet/dirt)
-function VoiceOcclusion.Client:DetectSurfaceAbsorb()
+function ImmersiveVoiceChat.Client:DetectSurfaceAbsorb()
     local lp = LocalPlayer()
     if not IsValid(lp) then return 0.5 end
     local pos = lp:GetPos()
@@ -473,8 +473,8 @@ function VoiceOcclusion.Client:DetectSurfaceAbsorb()
 end
 
 -- Clean up disconnected player data
-timer.Create("VoiceOcclusion_Cleanup", 5, 0, function()
-    for steamID, _ in pairs(VoiceOcclusion.Client.StoredOcclusion) do
+timer.Create("ImmersiveVoiceChat_Cleanup", 5, 0, function()
+    for steamID, _ in pairs(ImmersiveVoiceChat.Client.StoredOcclusion) do
         local found = false
         for _, p in ipairs(player.GetAll()) do
             if IsValid(p) and p:SteamID64() == steamID then
@@ -483,21 +483,21 @@ timer.Create("VoiceOcclusion_Cleanup", 5, 0, function()
             end
         end
         if not found then
-            VoiceOcclusion.Client.StoredOcclusion[steamID] = nil
-            if VoiceOcclusion.Client.StoredDistance then VoiceOcclusion.Client.StoredDistance[steamID] = nil end
-            if VoiceOcclusion.Client.StoredPosition then VoiceOcclusion.Client.StoredPosition[steamID] = nil end
-            if VoiceOcclusion.Client.StoredIndoor then VoiceOcclusion.Client.StoredIndoor[steamID] = nil end
-            if VoiceOcclusion.Client.StoredRoomSize then VoiceOcclusion.Client.StoredRoomSize[steamID] = nil end
-            if VoiceOcclusion.Client.StoredVelocity then VoiceOcclusion.Client.StoredVelocity[steamID] = nil end
-            if VoiceOcclusion.Client.StoredUnderwater then VoiceOcclusion.Client.StoredUnderwater[steamID] = nil end
-            if VoiceOcclusion.Client.StoredVoiceMode then VoiceOcclusion.Client.StoredVoiceMode[steamID] = nil end
+            ImmersiveVoiceChat.Client.StoredOcclusion[steamID] = nil
+            if ImmersiveVoiceChat.Client.StoredDistance then ImmersiveVoiceChat.Client.StoredDistance[steamID] = nil end
+            if ImmersiveVoiceChat.Client.StoredPosition then ImmersiveVoiceChat.Client.StoredPosition[steamID] = nil end
+            if ImmersiveVoiceChat.Client.StoredIndoor then ImmersiveVoiceChat.Client.StoredIndoor[steamID] = nil end
+            if ImmersiveVoiceChat.Client.StoredRoomSize then ImmersiveVoiceChat.Client.StoredRoomSize[steamID] = nil end
+            if ImmersiveVoiceChat.Client.StoredVelocity then ImmersiveVoiceChat.Client.StoredVelocity[steamID] = nil end
+            if ImmersiveVoiceChat.Client.StoredUnderwater then ImmersiveVoiceChat.Client.StoredUnderwater[steamID] = nil end
+            if ImmersiveVoiceChat.Client.StoredVoiceMode then ImmersiveVoiceChat.Client.StoredVoiceMode[steamID] = nil end
         end
     end
 end)
 
 -- HUD Indicator: shows occlusion level for the player you're looking at
 local function DrawOcclusionHUD()
-    if not VoiceOcclusion.Client.HUDEnabled then return end
+    if not ImmersiveVoiceChat.Client.HUDEnabled then return end
     local lp = LocalPlayer()
     if not IsValid(lp) then return end
 
@@ -511,7 +511,7 @@ local function DrawOcclusionHUD()
     if not target then
         -- Fallback: show closest speaking player
         local bestDist = math.huge
-        for steamID, occ in pairs(VoiceOcclusion.Client.StoredOcclusion) do
+        for steamID, occ in pairs(ImmersiveVoiceChat.Client.StoredOcclusion) do
             for _, p in ipairs(player.GetAll()) do
                 if IsValid(p) and p:SteamID64() == steamID then
                     local d = lp:GetPos():Distance(p:GetPos())
@@ -528,8 +528,8 @@ local function DrawOcclusionHUD()
     if not target then return end
 
     local steamID = target:SteamID64()
-    local occ = VoiceOcclusion.Client.StoredOcclusion[steamID] or 0
-    local dist = VoiceOcclusion.Client.StoredDistance and VoiceOcclusion.Client.StoredDistance[steamID] or 0
+    local occ = ImmersiveVoiceChat.Client.StoredOcclusion[steamID] or 0
+    local dist = ImmersiveVoiceChat.Client.StoredDistance and ImmersiveVoiceChat.Client.StoredDistance[steamID] or 0
 
     local scrW, scrH = ScrW(), ScrH()
     local boxW, boxH = 260, 80
@@ -555,26 +555,26 @@ local function DrawOcclusionHUD()
     draw.SimpleText(string.format("Occlusion: %.0f%%", occ * 100), "DermaDefault", x + 10, y + 50, Color(200, 200, 200), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     draw.SimpleText(string.format("Dist: %.0f", dist), "DermaDefault", x + boxW - 10, y + 50, Color(150, 150, 150), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
 end
-hook.Add("HUDPaint", "VoiceOcclusion_HUD", DrawOcclusionHUD)
+hook.Add("HUDPaint", "ImmersiveVoiceChat_HUD", DrawOcclusionHUD)
 
 -- Console commands for HUD
 concommand.Add("vo_hud", function()
-    VoiceOcclusion.Client.HUDEnabled = not VoiceOcclusion.Client.HUDEnabled
-    print("[VoiceOcclusion] HUD: " .. tostring(VoiceOcclusion.Client.HUDEnabled))
+    ImmersiveVoiceChat.Client.HUDEnabled = not ImmersiveVoiceChat.Client.HUDEnabled
+    print("[ImmersiveVoiceChat] HUD: " .. tostring(ImmersiveVoiceChat.Client.HUDEnabled))
 end)
 
 -- Performance profiler
-local vo_profiler = CreateConVar("vo_profiler", "0", FCVAR_ARCHIVE, "Show Voice Occlusion performance profiler")
+local vo_profiler = CreateConVar("vo_profiler", "0", FCVAR_ARCHIVE, "Show Immersive Voice Chat performance profiler")
 
 local function DrawProfiler()
     if not vo_profiler:GetBool() then return end
-    local cli = VoiceOcclusion.Client.Stats or {}
+    local cli = ImmersiveVoiceChat.Client.Stats or {}
 
     local lines = {
-        "=== Voice Occlusion Profiler ===",
+        "=== Immersive Voice Chat Profiler ===",
         string.format("Client updates:  %d (last %.2f ms)", cli.updatesReceived or 0, cli.lastUpdateMs or 0),
-        "Module: " .. tostring(VoiceOcclusion.Client.ModuleLoaded),
-        "Stored entries:  " .. table.Count(VoiceOcclusion.Client.StoredOcclusion),
+        "Module: " .. tostring(ImmersiveVoiceChat.Client.ModuleLoaded),
+        "Stored entries:  " .. table.Count(ImmersiveVoiceChat.Client.StoredOcclusion),
     }
 
     local x, y = 10, 10
@@ -585,13 +585,13 @@ local function DrawProfiler()
         draw.SimpleText(line, "DermaDefault", x + 8, y + 4 + (i - 1) * 18, Color(0, 255, 180), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     end
 end
-hook.Add("HUDPaint", "VoiceOcclusion_Profiler", DrawProfiler)
+hook.Add("HUDPaint", "ImmersiveVoiceChat_Profiler", DrawProfiler)
 
 -- Voice mode icons
 local MODE_ICONS = {
-    [0] = Material("voiceocclusion/whisper.png", "smooth mips unlitgeneric"),
-    [1] = Material("voiceocclusion/talk.png", "smooth mips unlitgeneric"),
-    [2] = Material("voiceocclusion/yell.png", "smooth mips unlitgeneric"),
+    [0] = Material("immersivevoicechat/whisper.png", "smooth mips unlitgeneric"),
+    [1] = Material("immersivevoicechat/talk.png", "smooth mips unlitgeneric"),
+    [2] = Material("immersivevoicechat/yell.png", "smooth mips unlitgeneric"),
 }
 
 -- Voice mode HUD indicator (fades out after cycling)
@@ -600,7 +600,7 @@ local function DrawVoiceModeHUD()
     if elapsed > MODE_FADE_TIME then return end
 
     local alpha = math.Clamp(1 - (elapsed / MODE_FADE_TIME), 0, 1)
-    local mode = VoiceOcclusion.Client.VoiceMode
+    local mode = ImmersiveVoiceChat.Client.VoiceMode
     local icon = MODE_ICONS[mode]
     if not icon then return end
 
@@ -612,11 +612,11 @@ local function DrawVoiceModeHUD()
     surface.SetMaterial(icon)
     surface.DrawTexturedRect(scrW / 2 - size / 2, scrH / 2 + 50, size, size)
 end
-hook.Add("HUDPaint", "VoiceOcclusion_VoiceMode", DrawVoiceModeHUD)
+hook.Add("HUDPaint", "ImmersiveVoiceChat_VoiceMode", DrawVoiceModeHUD)
 
-function VoiceOcclusion.Client:OpenSettingsMenu()
-    if IsValid(VoiceOcclusion.Client.SettingsFrame) then
-        VoiceOcclusion.Client.SettingsFrame:Remove()
+function ImmersiveVoiceChat.Client:OpenSettingsMenu()
+    if IsValid(ImmersiveVoiceChat.Client.SettingsFrame) then
+        ImmersiveVoiceChat.Client.SettingsFrame:Remove()
     end
 
     local frameW, frameH = 620, 520
@@ -633,7 +633,7 @@ function VoiceOcclusion.Client:OpenSettingsMenu()
         draw.RoundedBox(10, 0, 0, w, h, VO_UI.border)
         draw.RoundedBox(10, 1, 1, w - 2, h - 2, VO_UI.bg)
     end
-    VoiceOcclusion.Client.SettingsFrame = frame
+    ImmersiveVoiceChat.Client.SettingsFrame = frame
 
     local closeBtn = vgui.Create("DButton", frame)
     closeBtn:SetSize(28, 28)
@@ -649,7 +649,7 @@ function VoiceOcclusion.Client:OpenSettingsMenu()
     titleLabel:SetPos(16, 8)
     titleLabel:SetSize(200, 28)
     titleLabel.Paint = function(self, w, h)
-        draw.SimpleText("Voice Occlusion", "VO_UI_Title", 0, 4, VO_UI.text)
+        draw.SimpleText("Immersive Voice Chat", "VO_UI_Title", 0, 4, VO_UI.text)
     end
 
     local sidebar = vgui.Create("DPanel", frame)
@@ -691,59 +691,59 @@ function VoiceOcclusion.Client:OpenSettingsMenu()
         if cat.name == "GENERAL" then
             CreateSectionHeader(scroll, "Interface")
             CreatePillToggle(scroll, "HUD Indicator", "Show occlusion level on-screen",
-                function() return VoiceOcclusion.Client.HUDEnabled end,
-                function(v) VoiceOcclusion.Client.HUDEnabled = v end)
+                function() return ImmersiveVoiceChat.Client.HUDEnabled end,
+                function(v) ImmersiveVoiceChat.Client.HUDEnabled = v end)
 
             CreateSectionHeader(scroll, "Debug")
             CreatePillToggle(scroll, "Debug Mode", "Enable server debug output",
-                function() return VoiceOcclusion.Config.DebugMode end,
-                function(v) VoiceOcclusion.Config.DebugMode = v end)
+                function() return ImmersiveVoiceChat.Config.DebugMode end,
+                function(v) ImmersiveVoiceChat.Config.DebugMode = v end)
             CreatePillToggle(scroll, "Draw Traces", "Visualize trace lines (sv_cheats 1)",
-                function() return VoiceOcclusion.Config.DrawDebugTraces end,
-                function(v) VoiceOcclusion.Config.DrawDebugTraces = v end)
+                function() return ImmersiveVoiceChat.Config.DrawDebugTraces end,
+                function(v) ImmersiveVoiceChat.Config.DrawDebugTraces = v end)
 
         elseif cat.name == "AUDIO" then
             CreateSectionHeader(scroll, "Voice Mode")
             CreateThinSlider(scroll, "Whisper Distance", "Max voice range multiplier while whispering",
-                function() return VoiceOcclusion.Config.VoiceModes[0].maxDistMult end,
-                function(v) VoiceOcclusion.Config.VoiceModes[0].maxDistMult = v; RunConsoleCommand("vo_whisper_dist", tostring(v)) end,
+                function() return ImmersiveVoiceChat.Config.VoiceModes[0].maxDistMult end,
+                function(v) ImmersiveVoiceChat.Config.VoiceModes[0].maxDistMult = v; RunConsoleCommand("vo_whisper_dist", tostring(v)) end,
                 0.1, 1.0, 2)
             CreateThinSlider(scroll, "Whisper Occlusion", "Wall muffling multiplier while whispering",
-                function() return VoiceOcclusion.Config.VoiceModes[0].occlusionMult end,
-                function(v) VoiceOcclusion.Config.VoiceModes[0].occlusionMult = v; RunConsoleCommand("vo_whisper_occ", tostring(v)) end,
+                function() return ImmersiveVoiceChat.Config.VoiceModes[0].occlusionMult end,
+                function(v) ImmersiveVoiceChat.Config.VoiceModes[0].occlusionMult = v; RunConsoleCommand("vo_whisper_occ", tostring(v)) end,
                 0.1, 3.0, 2)
             CreateThinSlider(scroll, "Yell Distance", "Max voice range multiplier while yelling",
-                function() return VoiceOcclusion.Config.VoiceModes[2].maxDistMult end,
-                function(v) VoiceOcclusion.Config.VoiceModes[2].maxDistMult = v; RunConsoleCommand("vo_yell_dist", tostring(v)) end,
+                function() return ImmersiveVoiceChat.Config.VoiceModes[2].maxDistMult end,
+                function(v) ImmersiveVoiceChat.Config.VoiceModes[2].maxDistMult = v; RunConsoleCommand("vo_yell_dist", tostring(v)) end,
                 1.0, 5.0, 2)
             CreateThinSlider(scroll, "Yell Occlusion", "Wall muffling multiplier while yelling",
-                function() return VoiceOcclusion.Config.VoiceModes[2].occlusionMult end,
-                function(v) VoiceOcclusion.Config.VoiceModes[2].occlusionMult = v; RunConsoleCommand("vo_yell_occ", tostring(v)) end,
+                function() return ImmersiveVoiceChat.Config.VoiceModes[2].occlusionMult end,
+                function(v) ImmersiveVoiceChat.Config.VoiceModes[2].occlusionMult = v; RunConsoleCommand("vo_yell_occ", tostring(v)) end,
                 0.1, 2.0, 2)
 
             CreateSectionHeader(scroll, "Distance")
             CreateThinSlider(scroll, "Max Distance", "Maximum voice range in units",
-                function() return VoiceOcclusion.Config.MaxDistance end,
-                function(v) VoiceOcclusion.Config.MaxDistance = v; RunConsoleCommand("vo_maxdistance", tostring(v)) end,
+                function() return ImmersiveVoiceChat.Config.MaxDistance end,
+                function(v) ImmersiveVoiceChat.Config.MaxDistance = v; RunConsoleCommand("vo_maxdistance", tostring(v)) end,
                 100, 5000, 0)
             CreateThinSlider(scroll, "Trace Interval", "Occlusion check frequency (seconds)",
-                function() return VoiceOcclusion.Config.TraceInterval end,
-                function(v) VoiceOcclusion.Config.TraceInterval = v; RunConsoleCommand("vo_traceinterval", tostring(v)) end,
+                function() return ImmersiveVoiceChat.Config.TraceInterval end,
+                function(v) ImmersiveVoiceChat.Config.TraceInterval = v; RunConsoleCommand("vo_traceinterval", tostring(v)) end,
                 0.1, 2.0, 2)
 
         elseif cat.name == "OCCLUSION" then
             CreateSectionHeader(scroll, "Wall Effects")
             CreateThinSlider(scroll, "Wall Penalty", "Occlusion added per wall hit",
-                function() return VoiceOcclusion.Config.WallPenalty end,
-                function(v) VoiceOcclusion.Config.WallPenalty = v; RunConsoleCommand("vo_wallpenalty", tostring(v)) end,
+                function() return ImmersiveVoiceChat.Config.WallPenalty end,
+                function(v) ImmersiveVoiceChat.Config.WallPenalty = v; RunConsoleCommand("vo_wallpenalty", tostring(v)) end,
                 0, 1, 2)
             CreateThinSlider(scroll, "Glass Penalty", "Occlusion added for glass",
-                function() return VoiceOcclusion.Config.GlassPenalty end,
-                function(v) VoiceOcclusion.Config.GlassPenalty = v; RunConsoleCommand("vo_glasspenalty", tostring(v)) end,
+                function() return ImmersiveVoiceChat.Config.GlassPenalty end,
+                function(v) ImmersiveVoiceChat.Config.GlassPenalty = v; RunConsoleCommand("vo_glasspenalty", tostring(v)) end,
                 0, 0.5, 2)
             CreateThinSlider(scroll, "Thick Wall Bonus", "Extra occlusion for thick walls",
-                function() return VoiceOcclusion.Config.ThickWallBonus end,
-                function(v) VoiceOcclusion.Config.ThickWallBonus = v; RunConsoleCommand("vo_thickwallbonus", tostring(v)) end,
+                function() return ImmersiveVoiceChat.Config.ThickWallBonus end,
+                function(v) ImmersiveVoiceChat.Config.ThickWallBonus = v; RunConsoleCommand("vo_thickwallbonus", tostring(v)) end,
                 0, 0.5, 2)
 
         elseif cat.name == "DISPLAY" then
@@ -787,5 +787,5 @@ function VoiceOcclusion.Client:OpenSettingsMenu()
 end
 
 concommand.Add("vo_settings", function()
-    VoiceOcclusion.Client:OpenSettingsMenu()
+    ImmersiveVoiceChat.Client:OpenSettingsMenu()
 end)

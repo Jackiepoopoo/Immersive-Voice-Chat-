@@ -5,7 +5,7 @@
 #include <cstring>
 #include <cstdint>
 
-#define VO_SHARED_MEMORY_NAME "VoiceOcclusionData"
+#define VO_SHARED_MEMORY_NAME "ImmersiveVoiceChatData"
 #define VO_MAX_PLAYERS 64
 #define VO_MAX_NAME 64
 #define VO_SHARED_VERSION 8
@@ -140,13 +140,13 @@ GMOD_MODULE_OPEN()
 
     VO_InitSharedMemory();
 
-    if (!VoiceOcclusion::LuaInterface::Initialize())
+    if (!ImmersiveVoiceChat::LuaInterface::Initialize())
     {
         g_Lua->ThrowError("Failed to initialize Lua interface");
         return 0;
     }
 
-    if (!VoiceOcclusion::AudioProcessor::Initialize())
+    if (!ImmersiveVoiceChat::AudioProcessor::Initialize())
     {
         g_Lua->ThrowError("Failed to initialize audio processor");
         return 0;
@@ -158,8 +158,8 @@ GMOD_MODULE_OPEN()
 
 GMOD_MODULE_CLOSE()
 {
-    VoiceOcclusion::AudioProcessor::Shutdown();
-    VoiceOcclusion::LuaInterface::Shutdown();
+    ImmersiveVoiceChat::AudioProcessor::Shutdown();
+    ImmersiveVoiceChat::LuaInterface::Shutdown();
     VO_ShutdownSharedMemory();
     g_Lua = nullptr;
 

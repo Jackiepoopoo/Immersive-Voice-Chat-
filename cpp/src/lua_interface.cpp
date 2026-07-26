@@ -7,7 +7,7 @@ extern void VO_SetPlayerOcclusion(const char* name, float level, float distance,
 extern void VO_SetListenerPosition(float x, float y, float z, float yaw, float pitch, float roll, float indoor, float room, float surfaceAbsorb, uint32_t underwater);
 extern void VO_ClearPlayerOcclusion();
 
-namespace VoiceOcclusion {
+namespace ImmersiveVoiceChat {
 
 bool LuaInterface::Initialize()
 {
@@ -50,7 +50,7 @@ bool LuaInterface::Initialize()
     g_Lua->PushCFunction(Lua_SetListenerPosition);
     g_Lua->SetField(-2, "SetListenerPosition");
 
-    g_Lua->SetField(-2, "voiceocclusion");
+    g_Lua->SetField(-2, "immersivevoicechat");
     g_Lua->Pop(1);
 
     VO_PRINT("Lua interface initialized");
@@ -103,7 +103,7 @@ int LuaInterface::Lua_GetStrength(lua_State* L)
 
 int LuaInterface::Lua_GetVersion(lua_State* L)
 {
-    g_Lua->PushString(VOICE_OCCLUSION_VERSION);
+    g_Lua->PushString(IMMERSIVE_VOICE_CHAT_VERSION);
     return 1;
 }
 
@@ -126,7 +126,7 @@ int LuaInterface::Lua_GetStatus(lua_State* L)
         g_Lua->SetField(-2, "strength");
     }
 
-    g_Lua->PushString(VOICE_OCCLUSION_VERSION);
+    g_Lua->PushString(IMMERSIVE_VOICE_CHAT_VERSION);
     g_Lua->SetField(-2, "version");
 
     return 1;

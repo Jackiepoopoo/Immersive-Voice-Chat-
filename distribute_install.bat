@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ============================================
-echo   Voice Occlusion Installer
+echo   Immersive Voice Chat Installer
 echo ============================================
 echo.
 
@@ -52,9 +52,9 @@ set "INSTALL_DIR=%~dp0"
 :: Install binary module
 echo.
 echo Installing binary module...
-if exist "%INSTALL_DIR%gmcl_voiceocclusion_win64.dll" (
+if exist "%INSTALL_DIR%gmcl_immersivevoicechat_win64.dll" (
     if not exist "%GMOD_PATH%\garrysmod\lua\bin" mkdir "%GMOD_PATH%\garrysmod\lua\bin" >nul
-    copy /Y "%INSTALL_DIR%gmcl_voiceocclusion_win64.dll" "%GMOD_PATH%\garrysmod\lua\bin\gmcl_voiceocclusion_win64.dll" >nul
+    copy /Y "%INSTALL_DIR%gmcl_immersivevoicechat_win64.dll" "%GMOD_PATH%\garrysmod\lua\bin\gmcl_immersivevoicechat_win64.dll" >nul
     echo   OK
 ) else (
     echo   SKIP: Binary module not found in package
@@ -63,9 +63,9 @@ if exist "%INSTALL_DIR%gmcl_voiceocclusion_win64.dll" (
 :: Install Mumble plugin
 if defined MUMBLE_PATH (
     echo Installing Mumble plugin...
-    if exist "%INSTALL_DIR%mumble_voiceocclusion.dll" (
+    if exist "%INSTALL_DIR%mumble_immersivevoicechat.dll" (
         if not exist "%MUMBLE_PATH%\client\plugins" mkdir "%MUMBLE_PATH%\client\plugins" >nul
-        copy /Y "%INSTALL_DIR%mumble_voiceocclusion.dll" "%MUMBLE_PATH%\client\plugins\mumble_voiceocclusion.dll" >nul
+        copy /Y "%INSTALL_DIR%mumble_immersivevoicechat.dll" "%MUMBLE_PATH%\client\plugins\mumble_immersivevoicechat.dll" >nul
         echo   OK
     ) else (
         echo   SKIP: Mumble plugin not found in package

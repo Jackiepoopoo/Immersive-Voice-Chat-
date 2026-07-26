@@ -1,9 +1,9 @@
-#ifndef VOICE_OCCLUSION_LUA_INTERFACE_H
-#define VOICE_OCCLUSION_LUA_INTERFACE_H
+#ifndef IMMERSIVE_VOICE_CHAT_LUA_INTERFACE_H
+#define IMMERSIVE_VOICE_CHAT_LUA_INTERFACE_H
 
 #include <GarrysMod/Lua/LuaBase.h>
 
-namespace VoiceOcclusion {
+namespace ImmersiveVoiceChat {
 
 class LuaInterface
 {

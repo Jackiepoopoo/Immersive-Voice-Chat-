@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(VoiceOcclusion VERSION 1.0.0 LANGUAGES CXX)
+project(ImmersiveVoiceChat VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,34 +31,34 @@ set(SOURCES
 )
 
 # Create shared library (module)
-add_library(voiceocclusion SHARED ${SOURCES})
+add_library(immersivevoicechat SHARED ${SOURCES})
 
 # Set output name (without lib prefix on Linux)
-set_target_properties(voiceocclusion PROPERTIES
+set_target_properties(immersivevoicechat PROPERTIES
     PREFIX ""
-    OUTPUT_NAME "gmcl_voiceocclusion"
+    OUTPUT_NAME "gmcl_immersivevoicechat"
 )
 
 # Platform-specific settings
 if(WIN32)
     # Windows DLL
-    set_target_properties(voiceocclusion PROPERTIES
+    set_target_properties(immersivevoicechat PROPERTIES
         SUFFIX ".dll"
     )
 elseif(UNIX)
     # Linux shared object
-    set_target_properties(voiceocclusion PROPERTIES
+    set_target_properties(immersivevoicechat PROPERTIES
         SUFFIX ".dll"
     )
 endif()
 
 # Link libraries
-target_link_libraries(voiceocclusion
+target_link_libraries(immersivevoicechat
     ${LUA_LIBRARIES}
 )
 
 # Compiler definitions
-target_compile_definitions(voiceocclusion PRIVATE
+target_compile_definitions(immersivevoicechat PRIVATE
     GMMODULE
     GMOD_MODULE
     LUA_COMPAT_ALL
@@ -66,19 +66,19 @@ target_compile_definitions(voiceocclusion PRIVATE
 
 # Compiler flags
 if(MSVC)
-    target_compile_options(voiceocclusion PRIVATE
+    target_compile_options(immersivevoicechat PRIVATE
         /W4
         /EHsc
     )
 else()
-    target_compile_options(voiceocclusion PRIVATE
+    target_compile_options(immersivevoicechat PRIVATE
         -Wall
         -Wextra
     )
 endif()
 
 # Install rules
-install(TARGETS voiceocclusion
+install(TARGETS immersivevoicechat
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
 )

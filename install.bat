@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ============================================
-echo   Voice Occlusion Installer
+echo   Immersive Voice Chat Installer
 echo   One-click setup from GitHub
 echo ============================================
 echo.
@@ -12,7 +12,7 @@ echo.
 :: ============================================
 set "GITHUB_USER=Jackiepoopoo"
 set "GITHUB_REPO=Immersive-Voice-Chat-"
-set "RELEASE_FILE=voiceocclusion.zip"
+set "RELEASE_FILE=immersivevoicechat.zip"
 set "DOWNLOAD_URL=https://github.com/%GITHUB_USER%/%GITHUB_REPO%/releases/latest/download/%RELEASE_FILE%"
 :: ============================================
 
@@ -54,7 +54,7 @@ if exist "C:\Program Files\Mumble" set "MUMBLE_PATH=C:\Program Files\Mumble"
 if exist "C:\Program Files (x86)\Mumble" set "MUMBLE_PATH=C:\Program Files (x86)\Mumble"
 
 :: Create temp directory
-set "TEMP_DIR=%TEMP%\voiceocclusion_install"
+set "TEMP_DIR=%TEMP%\immersivevoicechat_install"
 if exist "%TEMP_DIR%" rd /s /q "%TEMP_DIR%" >nul 2>&1
 mkdir "%TEMP_DIR%" >nul
 
@@ -77,14 +77,14 @@ powershell -Command "Expand-Archive -Path '%TEMP_DIR%\%RELEASE_FILE%' -Destinati
 
 :: Files are at the root of the extracted folder
 set "SRC=%TEMP_DIR%\extracted"
-if exist "%TEMP_DIR%\extracted\voiceocclusion" set "SRC=%TEMP_DIR%\extracted\voiceocclusion"
+if exist "%TEMP_DIR%\extracted\immersivevoicechat" set "SRC=%TEMP_DIR%\extracted\immersivevoicechat"
 
 :: Install binary module
 echo.
 echo Installing binary module...
-if exist "%SRC%\gmcl_voiceocclusion_win64.dll" (
+if exist "%SRC%\gmcl_immersivevoicechat_win64.dll" (
     if not exist "%GMOD_PATH%\garrysmod\lua\bin" mkdir "%GMOD_PATH%\garrysmod\lua\bin" >nul
-    copy /Y "%SRC%\gmcl_voiceocclusion_win64.dll" "%GMOD_PATH%\garrysmod\lua\bin\gmcl_voiceocclusion_win64.dll" >nul
+    copy /Y "%SRC%\gmcl_immersivevoicechat_win64.dll" "%GMOD_PATH%\garrysmod\lua\bin\gmcl_immersivevoicechat_win64.dll" >nul
     echo   OK
 ) else (
     echo   SKIP: Binary module not in package
@@ -93,9 +93,9 @@ if exist "%SRC%\gmcl_voiceocclusion_win64.dll" (
 :: Install Mumble plugin
 if defined MUMBLE_PATH (
     echo Installing Mumble plugin...
-    if exist "%SRC%\mumble_voiceocclusion.dll" (
+    if exist "%SRC%\mumble_immersivevoicechat.dll" (
         if not exist "%MUMBLE_PATH%\client\plugins" mkdir "%MUMBLE_PATH%\client\plugins" >nul
-        copy /Y "%SRC%\mumble_voiceocclusion.dll" "%MUMBLE_PATH%\client\plugins\mumble_voiceocclusion.dll" >nul
+        copy /Y "%SRC%\mumble_immersivevoicechat.dll" "%MUMBLE_PATH%\client\plugins\mumble_immersivevoicechat.dll" >nul
         echo   OK
     ) else (
         echo   SKIP: Mumble plugin not in package
