@@ -19,16 +19,12 @@ local transmitNoise = 0
 local targetNoise = 0
 
 function SWEP:Deploy()
-    self.Channel = 1
-    self.IsTransmitting = false
-    if IsFirstTimePredicted() then
-        self:SetChannel(1)
-        self:SetTransmitting(false)
-    end
+    self:SetChannel(1)
+    self:SetTransmitting(false)
 end
 
 function SWEP:Holster()
-    if self.IsTransmitting then
+    if self:GetTransmitting() then
         self:StopTransmit()
     end
     return true
@@ -54,44 +50,46 @@ function SWEP:Think()
 
     local wantsTransmit = owner:KeyDown(IN_ATTACK)
 
-    if wantsTransmit and not self.IsTransmitting then
+    if wantsTransmit and not self:GetTransmitting() then
         self:StartTransmit()
-    elseif not wantsTransmit and self.IsTransmitting then
+    elseif not wantsTransmit and self:GetTransmitting() then
         self:StopTransmit()
     end
 end
 
 function SWEP:StartTransmit()
-    self.IsTransmitting = true
+    self:SetTransmitting(true)
     net.Start("vo_radio_transmit")
         net.WriteBool(true)
-        net.WriteUInt(self.Channel, 4)
+        net.WriteUInt(self:GetChannel(), 4)
     net.SendToServer()
     targetNoise = 1.0
 end
 
 function SWEP:StopTransmit()
-    self.IsTransmitting = false
+    self:SetTransmitting(false)
     net.Start("vo_radio_transmit")
         net.WriteBool(false)
-        net.WriteUInt(self.Channel, 4)
+        net.WriteUInt(self:GetChannel(), 4)
     net.SendToServer()
     targetNoise = 0.0
 end
 
 function SWEP:ScrollUp()
-    self.Channel = self.Channel + 1
-    if self.Channel > self.MaxChannels then
-        self.Channel = 1
+    local ch = self:GetChannel() + 1
+    if ch > self.MaxChannels then
+        ch = 1
     end
+    self:SetChannel(ch)
     surface.PlaySound("buttons/lightswitch2.wav")
 end
 
 function SWEP:ScrollDown()
-    self.Channel = self.Channel - 1
-    if self.Channel < 1 then
-        self.Channel = self.MaxChannels
+    local ch = self:GetChannel() - 1
+    if ch < 1 then
+        ch = self.MaxChannels
     end
+    self:SetChannel(ch)
     surface.PlaySound("buttons/lightswitch2.wav")
 end
 
@@ -112,14 +110,15 @@ function SWEP:DrawHUD()
     local panelX = scrW - panelW - 20
     local panelY = scrH - panelH - 20
 
-    local col = channelColors[self.Channel] or color_white
+    local ch = self:GetChannel()
+    local col = channelColors[ch] or color_white
 
     draw.RoundedBox(12, panelX, panelY, panelW, panelH, Color(20, 20, 20, 200))
 
-    draw.SimpleText("CH " .. self.Channel, "DermaLarge", panelX + panelW / 2, panelY + 22, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("CH " .. ch, "DermaLarge", panelX + panelW / 2, panelY + 22, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     local transmitY = panelY + 55
-    if self.IsTransmitting then
+    if self:GetTransmitting() then
         transmitNoise = Lerp(FrameTime() * 8, transmitNoise, targetNoise)
         local pulse = math.sin(CurTime() * 6) * 0.3 + 0.7
         local indicatorCol = Color(255, 50, 50, 255 * pulse)

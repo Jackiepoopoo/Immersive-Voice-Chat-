@@ -1,12 +1,11 @@
 -- Immersive Voice Chat Server Hooks
 -- Integrates with Garry's Mod voice system
 
--- Check if listener has a radio on the same channel as the speaker's radio
+-- Check if listener is holding weapon_radio on the same channel as the speaker's radio
 local function ListenerHasRadioOnChannel(listener, channel)
     if not IsValid(listener) then return false end
-    local listenerID = listener:SteamID64()
-    local radioData = ImmersiveVoiceChat.Server.PlayerRadio[listenerID]
-    if radioData and radioData.active and radioData.channel == channel then
+    local wep = listener:GetActiveWeapon()
+    if IsValid(wep) and wep:GetClass() == "weapon_radio" and wep:GetChannel() == channel then
         return true
     end
     return false
@@ -102,9 +101,7 @@ net.Receive("vo_radio_transmit", function(len, ply)
         ImmersiveVoiceChat.Server.PlayerRadio[plyID] = ImmersiveVoiceChat.Server.PlayerRadio[plyID] or {}
         ImmersiveVoiceChat.Server.PlayerRadio[plyID].active = active
         ImmersiveVoiceChat.Server.PlayerRadio[plyID].channel = channel
-        ImmersiveVoiceChat.Utils.DebugPrint(
-            ImmersiveVoiceChat.Utils.PlayerName(ply) .. " radio " .. (active and "TX ch" .. channel or "OFF")
-        )
+        print("[ImmersiveVoiceChat] " .. ply:Nick() .. " radio " .. (active and "TX ch" .. channel or "OFF"))
     end
 end)
 
@@ -172,6 +169,38 @@ concommand.Add("vo_config", function(ply, cmd, args)
         print("=== Immersive Voice Chat Config ===")
         for k, v in pairs(ImmersiveVoiceChat.Config) do
             print("  " .. k .. ": " .. tostring(v))
+        end
+    end
+end)
+
+concommand.Add("vo_radio", function(ply, cmd, args)
+    if not IsValid(ply) or ply:IsAdmin() then
+        print("=== Radio State ===")
+        for plyID, radio in pairs(ImmersiveVoiceChat.Server.PlayerRadio) do
+            local owner = "unknown"
+            for _, p in ipairs(player.GetAll()) do
+                if IsValid(p) and p:SteamID64() == plyID then
+                    owner = p:Nick()
+                    break
+                end
+            end
+            print("  " .. owner .. ": active=" .. tostring(radio.active) .. " ch=" .. tostring(radio.channel))
+        end
+        if table.Count(ImmersiveVoiceChat.Server.PlayerRadio) == 0 then
+            print("  (no radio data)")
+        end
+
+        print("\n=== Held Weapons ===")
+        for _, p in ipairs(player.GetAll()) do
+            if IsValid(p) then
+                local wep = p:GetActiveWeapon()
+                local wepClass = IsValid(wep) and wep:GetClass() or "none"
+                local ch = "n/a"
+                if IsValid(wep) and wep.GetChannel then
+                    ch = tostring(wep:GetChannel())
+                end
+                print("  " .. p:Nick() .. ": " .. wepClass .. " ch=" .. ch)
+            end
         end
     end
 end)

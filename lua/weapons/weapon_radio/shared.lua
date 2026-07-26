@@ -30,14 +30,10 @@ SWEP.ViewModel = "models/weapons/v_pistol.mdl"
 SWEP.WorldModel = "models/weapons/w_pistol.mdl"
 SWEP.HoldType = "pistol"
 
-SWEP.Channel = 1
 SWEP.MaxChannels = 9
-SWEP.IsTransmitting = false
 
 function SWEP:Initialize()
     self:SetHoldType(self.HoldType)
-    self.Channel = 1
-    self.IsTransmitting = false
 end
 
 function SWEP:SetupDataTables()
