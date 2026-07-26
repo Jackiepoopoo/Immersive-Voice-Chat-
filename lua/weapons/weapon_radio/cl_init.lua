@@ -18,9 +18,16 @@ local channelColors = {
 local transmitNoise = 0
 local targetNoise = 0
 
+local function SyncChannelToServer(ch)
+    net.Start("vo_radio_channel")
+        net.WriteUInt(ch, 4)
+    net.SendToServer()
+end
+
 function SWEP:Deploy()
     self:SetChannel(1)
     self:SetTransmitting(false)
+    SyncChannelToServer(1)
 end
 
 function SWEP:Holster()
@@ -81,6 +88,7 @@ function SWEP:ScrollUp()
         ch = 1
     end
     self:SetChannel(ch)
+    SyncChannelToServer(ch)
     surface.PlaySound("buttons/lightswitch2.wav")
 end
 
@@ -90,6 +98,7 @@ function SWEP:ScrollDown()
         ch = self.MaxChannels
     end
     self:SetChannel(ch)
+    SyncChannelToServer(ch)
     surface.PlaySound("buttons/lightswitch2.wav")
 end
 

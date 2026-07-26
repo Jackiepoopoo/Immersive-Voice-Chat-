@@ -4,8 +4,9 @@
 -- Check if listener is holding weapon_radio on the same channel as the speaker's radio
 local function ListenerHasRadioOnChannel(listener, channel)
     if not IsValid(listener) then return false end
-    local wep = listener:GetActiveWeapon()
-    if IsValid(wep) and wep:GetClass() == "weapon_radio" and wep:GetChannel() == channel then
+    local listenerID = listener:SteamID64()
+    local listenerChannel = ImmersiveVoiceChat.Server.PlayerRadioChannel[listenerID]
+    if listenerChannel and listenerChannel == channel then
         return true
     end
     return false
@@ -101,7 +102,17 @@ net.Receive("vo_radio_transmit", function(len, ply)
         ImmersiveVoiceChat.Server.PlayerRadio[plyID] = ImmersiveVoiceChat.Server.PlayerRadio[plyID] or {}
         ImmersiveVoiceChat.Server.PlayerRadio[plyID].active = active
         ImmersiveVoiceChat.Server.PlayerRadio[plyID].channel = channel
+        -- Also sync the channel to PlayerRadioChannel
+        ImmersiveVoiceChat.Server.PlayerRadioChannel[plyID] = channel
         print("[ImmersiveVoiceChat] " .. ply:Nick() .. " radio " .. (active and "TX ch" .. channel or "OFF"))
+    end
+end)
+
+-- Receive radio channel when player scrolls (even when not transmitting)
+net.Receive("vo_radio_channel", function(len, ply)
+    if IsValid(ply) then
+        local channel = math.Clamp(net.ReadUInt(4), 1, ImmersiveVoiceChat.Config.RadioMaxChannels or 9)
+        ImmersiveVoiceChat.Server.PlayerRadioChannel[ply:SteamID64()] = channel
     end
 end)
 
@@ -187,7 +198,19 @@ concommand.Add("vo_radio", function(ply, cmd, args)
             print("  " .. owner .. ": active=" .. tostring(radio.active) .. " ch=" .. tostring(radio.channel))
         end
         if table.Count(ImmersiveVoiceChat.Server.PlayerRadio) == 0 then
-            print("  (no radio data)")
+            print("  (no radio transmit data)")
+        end
+
+        print("\n=== Weapon Channels ===")
+        for plyID, ch in pairs(ImmersiveVoiceChat.Server.PlayerRadioChannel) do
+            local owner = "unknown"
+            for _, p in ipairs(player.GetAll()) do
+                if IsValid(p) and p:SteamID64() == plyID then
+                    owner = p:Nick()
+                    break
+                end
+            end
+            print("  " .. owner .. ": ch=" .. tostring(ch))
         end
 
         print("\n=== Held Weapons ===")
@@ -195,11 +218,7 @@ concommand.Add("vo_radio", function(ply, cmd, args)
             if IsValid(p) then
                 local wep = p:GetActiveWeapon()
                 local wepClass = IsValid(wep) and wep:GetClass() or "none"
-                local ch = "n/a"
-                if IsValid(wep) and wep.GetChannel then
-                    ch = tostring(wep:GetChannel())
-                end
-                print("  " .. p:Nick() .. ": " .. wepClass .. " ch=" .. ch)
+                print("  " .. p:Nick() .. ": " .. wepClass)
             end
         end
     end

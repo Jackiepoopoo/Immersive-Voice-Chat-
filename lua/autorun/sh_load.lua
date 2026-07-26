@@ -26,6 +26,7 @@ if SERVER then
     util.AddNetworkString("vo_module_status")
     util.AddNetworkString("vo_voice_mode")
     util.AddNetworkString("vo_radio_transmit")
+    util.AddNetworkString("vo_radio_channel")
     
     print("[ImmersiveVoiceChat] Server-side loaded (v" .. ImmersiveVoiceChat.Version .. ")")
 end

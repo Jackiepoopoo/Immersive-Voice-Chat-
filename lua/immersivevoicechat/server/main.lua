@@ -5,6 +5,7 @@ ImmersiveVoiceChat.Server = ImmersiveVoiceChat.Server or {}
 ImmersiveVoiceChat.Server.PlayerState = {}
 ImmersiveVoiceChat.Server.PlayerVoiceMode = {}
 ImmersiveVoiceChat.Server.PlayerRadio = {} -- {steamID = {active=bool, channel=int}}
+ImmersiveVoiceChat.Server.PlayerRadioChannel = {} -- {steamID = channel} — what channel each player's weapon is set to
 ImmersiveVoiceChat.Server.LastCheck = 0
 ImmersiveVoiceChat.Server.ChecksThisTick = 0
 
@@ -424,6 +425,7 @@ function ImmersiveVoiceChat.Server:PlayerDisconnected(ply)
     ImmersiveVoiceChat.Server.PlayerState[plyID] = nil
     ImmersiveVoiceChat.Server.PlayerVoiceMode[plyID] = nil
     ImmersiveVoiceChat.Server.PlayerRadio[plyID] = nil
+    ImmersiveVoiceChat.Server.PlayerRadioChannel[plyID] = nil
     prevPositions[plyID] = nil
 
     for otherID, state in pairs(ImmersiveVoiceChat.Server.PlayerState) do
