@@ -292,7 +292,15 @@ function ImmersiveVoiceChat.Server:SendOcclusionToClient(speaker, listener, occl
     -- Delta compression: only send if occlusion changed significantly
     local prevOcc = ImmersiveVoiceChat.Server.PlayerState[listenerID][speakerID]
     if prevOcc ~= nil and math.abs(occlusion - prevOcc) < ImmersiveVoiceChat.Config.DeltaThreshold then
-        return
+        -- Even if occlusion didn't change, still update position/velocity periodically
+        -- so 3D panning stays accurate
+        local posKey = listenerID .. "_" .. speakerID
+        ImmersiveVoiceChat.Server.LastPositionSend = ImmersiveVoiceChat.Server.LastPositionSend or {}
+        local lastSend = ImmersiveVoiceChat.Server.LastPositionSend[posKey] or 0
+        if CurTime() - lastSend < 0.2 then
+            return
+        end
+        ImmersiveVoiceChat.Server.LastPositionSend[posKey] = CurTime()
     end
 
     ImmersiveVoiceChat.Server.PlayerState[listenerID][speakerID] = occlusion
