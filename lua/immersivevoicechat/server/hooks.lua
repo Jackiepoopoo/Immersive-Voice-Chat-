@@ -1,6 +1,17 @@
 -- Immersive Voice Chat Server Hooks
 -- Integrates with Garry's Mod voice system
 
+-- Check if listener has a radio on the same channel as the speaker's radio
+local function ListenerHasRadioOnChannel(listener, channel)
+    if not IsValid(listener) then return false end
+    local listenerID = listener:SteamID64()
+    local radioData = ImmersiveVoiceChat.Server.PlayerRadio[listenerID]
+    if radioData and radioData.active and radioData.channel == channel then
+        return true
+    end
+    return false
+end
+
 -- Main voice control hook
 hook.Add("PlayerCanHearPlayersVoice", "ImmersiveVoiceChat_HearCheck", function(listener, talker)
     if not ImmersiveVoiceChat.Config then
@@ -96,17 +107,6 @@ net.Receive("vo_radio_transmit", function(len, ply)
         )
     end
 end)
-
--- Check if listener has a radio on the same channel as the speaker's radio
-local function ListenerHasRadioOnChannel(listener, channel)
-    if not IsValid(listener) then return false end
-    local listenerID = listener:SteamID64()
-    local radioData = ImmersiveVoiceChat.Server.PlayerRadio[listenerID]
-    if radioData and radioData.active and radioData.channel == channel then
-        return true
-    end
-    return false
-end
 
 -- Think hook for processing occlusion
 hook.Add("Think", "ImmersiveVoiceChat_Think", function()
