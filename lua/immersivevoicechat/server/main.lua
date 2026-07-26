@@ -47,13 +47,17 @@ function ImmersiveVoiceChat.Server:DetectIndoor(pos)
         Vector(-1, 0, 0),
         Vector(0, 1, 0),
         Vector(0, -1, 0),
+        Vector(1, 1, 0):GetNormalized(),
+        Vector(-1, 1, 0):GetNormalized(),
+        Vector(1, -1, 0):GetNormalized(),
+        Vector(-1, -1, 0):GetNormalized(),
         Vector(0, 0, 1),
         Vector(0, 0, -1),
     }
 
     local hits = 0
     local totalDist = 0
-    local traceLen = 300
+    local traceLen = 800
 
     for _, dir in ipairs(directions) do
         local tr = util.TraceLine({

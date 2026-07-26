@@ -154,13 +154,13 @@ static void ApplyStereoPanning(float *pcm, uint32_t sampleCount, uint16_t channe
 }
 
 static void ApplyReverb(float *pcm, uint32_t sampleCount, uint16_t channelCount, uint32_t sampleRate, float indoorAmount, float roomSize, float surfaceAbsorb) {
-    if (indoorAmount < 0.1f) return;
+    if (indoorAmount < 0.05f) return;
 
     auto& rev = g_reverb[0];
 
     // Room size scales reverb parameters
-    // roomSize: 0-300 = small room, 300-500 = medium, 500+ = large hall
-    float sizeNorm = roomSize / 300.0f;  // 0 to ~1.0
+    // roomSize: 0-200 = small room, 200-500 = medium, 500+ = large hall/mall
+    float sizeNorm = roomSize / 200.0f;
     if (sizeNorm > 1.0f) sizeNorm = 1.0f;
 
     // Surface absorbency modulates reverb
@@ -168,9 +168,9 @@ static void ApplyReverb(float *pcm, uint32_t sampleCount, uint16_t channelCount,
     // Low absorb (concrete/tile): more reverb, less damping, more sustain
     float absorbMod = 1.0f - surfaceAbsorb;
 
-    float wetMix = indoorAmount * (0.10f + sizeNorm * 0.20f) * (0.3f + absorbMod * 0.7f);
-    float feedback = (0.3f + sizeNorm * 0.35f + indoorAmount * 0.15f) * (0.4f + absorbMod * 0.6f);
-    float damping = 0.6f - sizeNorm * 0.35f + surfaceAbsorb * 0.2f;
+    float wetMix = indoorAmount * (0.20f + sizeNorm * 0.35f) * (0.3f + absorbMod * 0.7f);
+    float feedback = (0.35f + sizeNorm * 0.40f + indoorAmount * 0.15f) * (0.4f + absorbMod * 0.6f);
+    float damping = 0.55f - sizeNorm * 0.30f + surfaceAbsorb * 0.2f;
 
     uint32_t totalSamples = sampleCount * channelCount;
     for (uint32_t i = 0; i < totalSamples; i++) {
