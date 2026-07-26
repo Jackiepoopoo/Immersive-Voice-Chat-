@@ -1,4 +1,4 @@
-# Voice Occlusion for Garry's Mod
+# Immersive Voice Chat for Garry's Mod
 
 Adds realistic sound physics to voice chat. When walls or obstacles are between players, voice becomes muffled.
 
@@ -12,27 +12,17 @@ Adds realistic sound physics to voice chat. When walls or obstacles are between 
 
 ## Installation
 
-### Server (Lua Addon)
+### Workshop
 
-1. Download the addon
-2. Extract to `garrysmod/addons/voiceocclusion/`
-3. Restart the server
+Subscribe to the Steam Workshop item for the Lua addon and materials.
 
-### Client (Binary Module - Optional)
+### Binary Modules (Required)
 
-The binary module provides full audio processing effects. Without it, the addon uses volume fallback.
+The binary module provides audio processing and Mumble integration. Download the zip and run `install.bat`:
 
-1. Download the appropriate binary for your OS:
-   - Windows: `gmcl_voiceocclusion_win32.dll`
-   - Linux: `gmcl_voiceocclusion_linux.dll`
-
-2. Rename to `gmcl_voiceocclusion.dll` (or keep platform-specific name)
-
-3. Place in `garrysmod/lua/bin/`
-
-4. Restart Garry's Mod
-
-**Note**: The binary module is optional. The addon works perfectly without it using volume-based fallback.
+1. Download `voiceocclusion.zip` from [Releases](https://github.com/Jackiepoopoo/Immersive-Voice-Chat-/releases)
+2. Extract and run `install.bat`
+3. Restart Garry's Mod (and Mumble if using it)
 
 ## Configuration
 
@@ -40,7 +30,7 @@ The binary module provides full audio processing effects. Without it, the addon 
 
 | Command | Description |
 |---------|-------------|
-| `vo_maxdistance <value>` | Set maximum voice range (default: 1500) |
+| `vo_maxdistance <value>` | Set maximum voice range (default: 1200) |
 | `vo_traceinterval <value>` | Set traceline check interval (default: 0.3) |
 | `vo_debug` | Toggle debug output |
 | `vo_status` | Show addon status |
@@ -58,7 +48,7 @@ The binary module provides full audio processing effects. Without it, the addon 
 
 ### Configuration File
 
-Edit `lua/voiceocclusion/config.lua` to change default settings.
+Edit `lua/immersivevoicechat/config.lua` to change default settings.
 
 ## How It Works
 
