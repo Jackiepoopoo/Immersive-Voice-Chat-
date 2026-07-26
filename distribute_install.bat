@@ -52,31 +52,13 @@ set "INSTALL_DIR=%~dp0"
 :: Install binary module
 echo.
 echo Installing binary module...
-if exist "%INSTALL_DIR%lua\bin\gmcl_voiceocclusion_win64.dll" (
+if exist "%INSTALL_DIR%gmcl_voiceocclusion_win64.dll" (
     if not exist "%GMOD_PATH%\garrysmod\lua\bin" mkdir "%GMOD_PATH%\garrysmod\lua\bin" >nul
-    copy /Y "%INSTALL_DIR%lua\bin\gmcl_voiceocclusion_win64.dll" "%GMOD_PATH%\garrysmod\lua\bin\gmcl_voiceocclusion_win64.dll" >nul
+    copy /Y "%INSTALL_DIR%gmcl_voiceocclusion_win64.dll" "%GMOD_PATH%\garrysmod\lua\bin\gmcl_voiceocclusion_win64.dll" >nul
     echo   OK
 ) else (
     echo   SKIP: Binary module not found in package
 )
-
-:: Install Lua addon + materials
-echo Installing addon...
-set "ADDON=%GMOD_PATH%\garrysmod\addons\voiceocclusion"
-mkdir "%ADDON%\lua\autorun" >nul 2>&1
-mkdir "%ADDON%\lua\voiceocclusion\client" >nul 2>&1
-mkdir "%ADDON%\lua\voiceocclusion\server" >nul 2>&1
-mkdir "%ADDON%\materials\voiceocclusion" >nul 2>&1
-
-copy /Y "%INSTALL_DIR%lua\autorun\sh_load.lua" "%ADDON%\lua\autorun\sh_load.lua" >nul
-copy /Y "%INSTALL_DIR%lua\voiceocclusion\config.lua" "%ADDON%\lua\voiceocclusion\config.lua" >nul
-copy /Y "%INSTALL_DIR%lua\voiceocclusion\shared.lua" "%ADDON%\lua\voiceocclusion\shared.lua" >nul
-copy /Y "%INSTALL_DIR%lua\voiceocclusion\client\main.lua" "%ADDON%\lua\voiceocclusion\client\main.lua" >nul
-copy /Y "%INSTALL_DIR%lua\voiceocclusion\client\cl_module.lua" "%ADDON%\lua\voiceocclusion\client\cl_module.lua" >nul
-copy /Y "%INSTALL_DIR%lua\voiceocclusion\server\main.lua" "%ADDON%\lua\voiceocclusion\server\main.lua" >nul
-copy /Y "%INSTALL_DIR%lua\voiceocclusion\server\hooks.lua" "%ADDON%\lua\voiceocclusion\server\hooks.lua" >nul
-copy /Y "%INSTALL_DIR%materials\voiceocclusion\*.png" "%ADDON%\materials\voiceocclusion\" >nul
-echo   OK
 
 :: Install Mumble plugin
 if defined MUMBLE_PATH (
@@ -99,5 +81,8 @@ echo.
 echo   If using Mumble, also restart Mumble.
 echo   Set your Mumble name to match your
 echo   Garry's Mod name for voice to work.
+echo.
+echo   The Lua addon and materials are on the
+echo   Steam Workshop - subscribe there first!
 echo ============================================
 pause

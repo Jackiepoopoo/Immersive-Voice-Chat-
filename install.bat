@@ -75,51 +75,20 @@ echo   Downloaded successfully.
 echo Extracting...
 powershell -Command "Expand-Archive -Path '%TEMP_DIR%\%RELEASE_FILE%' -DestinationPath '%TEMP_DIR%\extracted' -Force"
 
-:: Find extracted folder (may be nested)
-set "EXTRACT_DIR=%TEMP_DIR%\extracted"
-if exist "%EXTRACT_DIR%\lua" (
-    set "SRC=%EXTRACT_DIR%"
-) else (
-    for /d %%D in ("%EXTRACT_DIR%\*") do (
-        if exist "%%D\lua" set "SRC=%%D"
-    )
-)
-if not defined SRC (
-    echo ERROR: Could not find addon files in the download.
-    pause
-    exit /b 1
-)
+:: Files are at the root of the extracted folder
+set "SRC=%TEMP_DIR%\extracted"
+if exist "%TEMP_DIR%\extracted\voiceocclusion" set "SRC=%TEMP_DIR%\extracted\voiceocclusion"
 
 :: Install binary module
 echo.
 echo Installing binary module...
-if exist "%SRC%\lua\bin\gmcl_voiceocclusion_win64.dll" (
+if exist "%SRC%\gmcl_voiceocclusion_win64.dll" (
     if not exist "%GMOD_PATH%\garrysmod\lua\bin" mkdir "%GMOD_PATH%\garrysmod\lua\bin" >nul
-    copy /Y "%SRC%\lua\bin\gmcl_voiceocclusion_win64.dll" "%GMOD_PATH%\garrysmod\lua\bin\gmcl_voiceocclusion_win64.dll" >nul
+    copy /Y "%SRC%\gmcl_voiceocclusion_win64.dll" "%GMOD_PATH%\garrysmod\lua\bin\gmcl_voiceocclusion_win64.dll" >nul
     echo   OK
 ) else (
     echo   SKIP: Binary module not in package
 )
-
-:: Install Lua addon
-echo Installing addon...
-set "ADDON=%GMOD_PATH%\garrysmod\addons\voiceocclusion"
-mkdir "%ADDON%\lua\autorun" >nul 2>&1
-mkdir "%ADDON%\lua\voiceocclusion\client" >nul 2>&1
-mkdir "%ADDON%\lua\voiceocclusion\server" >nul 2>&1
-mkdir "%ADDON%\materials\voiceocclusion" >nul 2>&1
-
-copy /Y "%SRC%\lua\autorun\sh_load.lua" "%ADDON%\lua\autorun\sh_load.lua" >nul
-copy /Y "%SRC%\lua\voiceocclusion\config.lua" "%ADDON%\lua\voiceocclusion\config.lua" >nul
-copy /Y "%SRC%\lua\voiceocclusion\shared.lua" "%ADDON%\lua\voiceocclusion\shared.lua" >nul
-copy /Y "%SRC%\lua\voiceocclusion\client\main.lua" "%ADDON%\lua\voiceocclusion\client\main.lua" >nul
-copy /Y "%SRC%\lua\voiceocclusion\client\cl_module.lua" "%ADDON%\lua\voiceocclusion\client\cl_module.lua" >nul
-copy /Y "%SRC%\lua\voiceocclusion\server\main.lua" "%ADDON%\lua\voiceocclusion\server\main.lua" >nul
-copy /Y "%SRC%\lua\voiceocclusion\server\hooks.lua" "%ADDON%\lua\voiceocclusion\server\hooks.lua" >nul
-if exist "%SRC%\materials\voiceocclusion" (
-    copy /Y "%SRC%\materials\voiceocclusion\*.png" "%ADDON%\materials\voiceocclusion\" >nul
-)
-echo   OK
 
 :: Install Mumble plugin
 if defined MUMBLE_PATH (
@@ -144,5 +113,8 @@ echo   Done! Restart Garry's Mod to apply.
 echo.
 echo   If using Mumble, also restart Mumble.
 echo   Set your Mumble name = your Gmod name.
+echo.
+echo   The Lua addon and materials are on the
+echo   Steam Workshop - subscribe there first!
 echo ============================================
 pause
