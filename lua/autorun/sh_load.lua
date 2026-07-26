@@ -12,6 +12,8 @@ if SERVER then
     AddCSLuaFile("immersivevoicechat/shared.lua")
     AddCSLuaFile("immersivevoicechat/client/main.lua")
     AddCSLuaFile("immersivevoicechat/client/cl_module.lua")
+    AddCSLuaFile("weapons/weapon_radio/shared.lua")
+    AddCSLuaFile("weapons/weapon_radio/cl_init.lua")
     
     include("immersivevoicechat/shared.lua")
     include("immersivevoicechat/server/main.lua")
@@ -23,6 +25,7 @@ if SERVER then
     util.AddNetworkString("vo_request_sync")
     util.AddNetworkString("vo_module_status")
     util.AddNetworkString("vo_voice_mode")
+    util.AddNetworkString("vo_radio_transmit")
     
     print("[ImmersiveVoiceChat] Server-side loaded (v" .. ImmersiveVoiceChat.Version .. ")")
 end

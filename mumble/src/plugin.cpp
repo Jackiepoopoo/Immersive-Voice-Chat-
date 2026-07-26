@@ -35,6 +35,24 @@ struct DopplerState {
 };
 static std::unordered_map<uint32_t, DopplerState> g_doppler;
 
+// Radio filter state per user
+struct RadioState {
+    // Bandpass: cascaded HP + LP (Butterworth-style single-pole)
+    float hpState;       // High-pass state (output)
+    float prevInput;     // Previous input for HP filter
+    float lpState;       // Low-pass state
+    // White noise LFSR
+    uint32_t lfsr;
+    // Squelch click
+    float squelchPhase;
+    float squelchDur;
+    bool wasRadio;
+    // Room reverb simulation
+    float reverbBuf[128];
+    uint32_t reverbPos;
+};
+static std::unordered_map<uint32_t, RadioState> g_radio;
+
 // Simple reverb using multiple comb filters with high-frequency damping
 static const uint32_t REVERB_MAX_DELAY = 6000;  // 125ms at 48kHz
 // Prime-number delay times avoid harmonic resonance (metallic sound)
@@ -87,10 +105,11 @@ struct LookupResult {
     float roomSize;
     uint32_t isUnderwater;
     uint32_t voiceMode;
+    uint32_t isRadio;
 };
 
 static LookupResult LookupPlayer(const char* name) {
-    LookupResult result = { 0.0f, 0.0f, {0, 0, 0}, {0, 0, 0}, 0.0f, 0.0f, 0, 1 };
+    LookupResult result = { 0.0f, 0.0f, {0, 0, 0}, {0, 0, 0}, 0.0f, 0.0f, 0, 1, 0 };
     if (!g_sharedData || g_sharedData->version != VO_SHARED_VERSION) return result;
     for (uint32_t i = 0; i < g_sharedData->playerCount && i < VO_MAX_PLAYERS; i++) {
         if (_stricmp(g_sharedData->players[i].name, name) == 0) {
@@ -106,6 +125,7 @@ static LookupResult LookupPlayer(const char* name) {
             result.roomSize = g_sharedData->players[i].roomSize;
             result.isUnderwater = g_sharedData->players[i].isUnderwater;
             result.voiceMode = g_sharedData->players[i].voiceMode;
+            result.isRadio = g_sharedData->players[i].isRadio;
             return result;
         }
     }
@@ -138,6 +158,84 @@ static void RefreshConnection() {
     }
 }
 
+static inline float FlushDenormal(float x) {
+    return (fabsf(x) < 1.0e-18f) ? 0.0f : x;
+}
+
+static void ApplyRadioFilter(float *pcm, uint32_t sampleCount, uint16_t channelCount, uint32_t sampleRate, mumble_userid_t userID, bool justStarted) {
+    auto& radio = g_radio[userID];
+
+    if (justStarted) {
+        radio.hpState = 0.0f;
+        radio.prevInput = 0.0f;
+        radio.lpState = 0.0f;
+        radio.lfsr = 0xDEADBEEF + userID;
+        radio.squelchPhase = 0.0f;
+        radio.squelchDur = 0.06f;
+        memset(radio.reverbBuf, 0, sizeof(radio.reverbBuf));
+        radio.reverbPos = 0;
+    }
+
+    float hpCutoff = 300.0f;
+    float lpCutoff = 3000.0f;
+    float hpAlpha = 1.0f - expf(-2.0f * PI * hpCutoff / (float)sampleRate);
+    float lpAlpha = 1.0f - expf(-2.0f * PI * lpCutoff / (float)sampleRate);
+
+    float noiseAmount = 0.12f;
+    float reverbMix = 0.15f;
+
+    uint32_t totalSamples = sampleCount * channelCount;
+
+    // Squelch click at the start
+    float squelchClick = 0.0f;
+    if (radio.squelchPhase < radio.squelchDur) {
+        // Short impulse that decays quickly
+        float t = radio.squelchPhase / radio.squelchDur;
+        squelchClick = (1.0f - t) * 0.3f * (radio.lfsr & 1 ? 1.0f : -1.0f);
+    }
+
+    for (uint32_t i = 0; i < totalSamples; i++) {
+        float sample = pcm[i];
+
+        // High-pass (removes low frequencies): y[n] = alpha * (y[n-1] + x[n] - x[n-1])
+        float hpOut = FlushDenormal(hpAlpha * (radio.hpState + sample - radio.prevInput));
+        radio.hpState = hpOut;
+        radio.prevInput = sample;
+
+        // Low-pass
+        radio.lpState = FlushDenormal(radio.lpState + lpAlpha * (hpOut - radio.lpState));
+        float lpOut = radio.lpState;
+
+        // Bandpass output
+        float bpOut = lpOut;
+
+        // Add white noise
+        radio.lfsr ^= radio.lfsr << 13;
+        radio.lfsr ^= radio.lfsr >> 17;
+        radio.lfsr ^= radio.lfsr << 5;
+        float noise = ((float)(radio.lfsr & 0xFFFF) / 65535.0f - 0.5f) * 2.0f;
+        bpOut += noise * noiseAmount;
+
+        // Add squelch click
+        if (radio.squelchPhase < radio.squelchDur) {
+            bpOut += squelchClick;
+            radio.squelchPhase += 1.0f / (float)sampleRate;
+        }
+
+        // Simple room reverb simulation
+        uint32_t readPos = (radio.reverbPos + 128 - 47) % 128;  // ~1ms delay at 48kHz
+        float delayed = radio.reverbBuf[readPos] * 0.3f;
+        radio.reverbBuf[radio.reverbPos] = bpOut + delayed * reverbMix;
+        radio.reverbPos = (radio.reverbPos + 1) % 128;
+        bpOut = bpOut * (1.0f - reverbMix) + delayed * reverbMix;
+
+        // Soft clip to simulate radio distortion
+        bpOut = tanhf(bpOut * 1.5f) * 0.85f;
+
+        pcm[i] = bpOut;
+    }
+}
+
 static void ApplyStereoPanning(float *pcm, uint32_t sampleCount, uint16_t channelCount, float pan) {
     if (channelCount < 2) return;
 
@@ -151,10 +249,6 @@ static void ApplyStereoPanning(float *pcm, uint32_t sampleCount, uint16_t channe
         pcm[i * 2]     *= leftGain;
         pcm[i * 2 + 1] *= rightGain;
     }
-}
-
-static inline float FlushDenormal(float x) {
-    return (fabsf(x) < 1.0e-18f) ? 0.0f : x;
 }
 
 static void ApplyReverb(float *pcm, uint32_t sampleCount, uint16_t channelCount, uint32_t sampleRate, float indoorAmount, float roomSize, float surfaceAbsorb, uint32_t userID) {
@@ -302,6 +396,7 @@ MUMBLE_PLUGIN_EXPORT void MUMBLE_PLUGIN_CALLING_CONVENTION mumble_shutdown() {
     g_currentDistCutoff.clear();
     g_reverb.clear();
     g_doppler.clear();
+    g_radio.clear();
 }
 
 MUMBLE_PLUGIN_EXPORT struct MumbleStringWrapper MUMBLE_PLUGIN_CALLING_CONVENTION mumble_getName() {
@@ -579,6 +674,24 @@ mumble_onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t cha
         ApplyUnderwaterEffect(outputPCM, sampleCount, channelCount, sampleRate);
     }
 
+    // --- Radio / Walkie Talkie filter ---
+    if (info.isRadio) {
+        bool justStarted = false;
+        auto it = g_radio.find(userID);
+        if (it == g_radio.end()) {
+            justStarted = true;
+        } else if (!it->second.wasRadio) {
+            justStarted = true;
+        }
+        ApplyRadioFilter(outputPCM, sampleCount, channelCount, sampleRate, userID, justStarted);
+        g_radio[userID].wasRadio = true;
+    } else {
+        auto it = g_radio.find(userID);
+        if (it != g_radio.end()) {
+            it->second.wasRadio = false;
+        }
+    }
+
     return true;
 }
 
@@ -600,6 +713,7 @@ MUMBLE_PLUGIN_EXPORT void MUMBLE_PLUGIN_CALLING_CONVENTION mumble_onUserRemoved(
     g_currentCutoff.erase(userID);
     g_currentDistCutoff.erase(userID);
     g_doppler.erase(userID);
+    g_radio.erase(userID);
 }
 
 MUMBLE_PLUGIN_EXPORT void MUMBLE_PLUGIN_CALLING_CONVENTION mumble_onChannelAdded(mumble_connection_t, mumble_channelid_t) {}

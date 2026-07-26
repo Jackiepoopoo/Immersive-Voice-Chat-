@@ -234,9 +234,10 @@ local function SendVoiceModeToModule()
                 local room = ImmersiveVoiceChat.Client.StoredRoomSize[sid] or 0
                 local vel = ImmersiveVoiceChat.Client.StoredVelocity[sid] or Vector(0,0,0)
                 local uw = ImmersiveVoiceChat.Client.StoredUnderwater[sid] and 1 or 0
+                local radio = ImmersiveVoiceChat.Client.StoredRadio and ImmersiveVoiceChat.Client.StoredRadio[sid] or 0
                 local px, py, pz = 0, 0, 0
                 if pos then px, py, pz = pos.x, pos.y, pos.z end
-                data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, ImmersiveVoiceChat.Client.VoiceMode}
+                data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, ImmersiveVoiceChat.Client.VoiceMode, radio}
                 break
             end
         end
@@ -276,6 +277,7 @@ net.Receive("vo_occlusion_update", function()
     local vz = net.ReadFloat()
     local underwater = net.ReadBit() == 1
     local voiceMode = net.ReadUInt(2)
+    local isRadio = net.ReadBit() == 1
     
     if IsValid(speaker) then
         local steamID = speaker:SteamID64()
@@ -294,6 +296,8 @@ net.Receive("vo_occlusion_update", function()
         ImmersiveVoiceChat.Client.StoredUnderwater[steamID] = underwater
         ImmersiveVoiceChat.Client.StoredVoiceMode = ImmersiveVoiceChat.Client.StoredVoiceMode or {}
         ImmersiveVoiceChat.Client.StoredVoiceMode[steamID] = voiceMode
+        ImmersiveVoiceChat.Client.StoredRadio = ImmersiveVoiceChat.Client.StoredRadio or {}
+        ImmersiveVoiceChat.Client.StoredRadio[steamID] = isRadio
         
         -- Push all occlusion data to binary module for Mumble shared memory
         if ImmersiveVoiceChat.Client.ModuleLoaded and immersivevoicechat then
@@ -308,9 +312,10 @@ net.Receive("vo_occlusion_update", function()
                         local vel = ImmersiveVoiceChat.Client.StoredVelocity[sid] or Vector(0,0,0)
                         local uw = ImmersiveVoiceChat.Client.StoredUnderwater[sid] and 1 or 0
                         local vmode = ImmersiveVoiceChat.Client.StoredVoiceMode[sid] or 1
+                        local radio = ImmersiveVoiceChat.Client.StoredRadio and ImmersiveVoiceChat.Client.StoredRadio[sid] or 0
                         local px, py, pz = 0, 0, 0
                         if pos then px, py, pz = pos.x, pos.y, pos.z end
-                        data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, vmode}
+                        data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, vmode, radio}
                         break
                     end
                 end
@@ -491,6 +496,7 @@ timer.Create("ImmersiveVoiceChat_Cleanup", 5, 0, function()
             if ImmersiveVoiceChat.Client.StoredVelocity then ImmersiveVoiceChat.Client.StoredVelocity[steamID] = nil end
             if ImmersiveVoiceChat.Client.StoredUnderwater then ImmersiveVoiceChat.Client.StoredUnderwater[steamID] = nil end
             if ImmersiveVoiceChat.Client.StoredVoiceMode then ImmersiveVoiceChat.Client.StoredVoiceMode[steamID] = nil end
+            if ImmersiveVoiceChat.Client.StoredRadio then ImmersiveVoiceChat.Client.StoredRadio[steamID] = nil end
         end
     end
 end)
@@ -511,9 +517,10 @@ local function PushAllDataToModule()
                 local vel = ImmersiveVoiceChat.Client.StoredVelocity and ImmersiveVoiceChat.Client.StoredVelocity[sid] or Vector(0,0,0)
                 local uw = ImmersiveVoiceChat.Client.StoredUnderwater and ImmersiveVoiceChat.Client.StoredUnderwater[sid] and 1 or 0
                 local vmode = ImmersiveVoiceChat.Client.StoredVoiceMode and ImmersiveVoiceChat.Client.StoredVoiceMode[sid] or 1
+                local radio = ImmersiveVoiceChat.Client.StoredRadio and ImmersiveVoiceChat.Client.StoredRadio[sid] or 0
                 local px, py, pz = 0, 0, 0
                 if pos then px, py, pz = pos.x, pos.y, pos.z end
-                data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, vmode}
+                data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, vmode, radio}
                 break
             end
         end

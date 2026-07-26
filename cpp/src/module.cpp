@@ -8,7 +8,7 @@
 #define VO_SHARED_MEMORY_NAME "ImmersiveVoiceChatData"
 #define VO_MAX_PLAYERS 64
 #define VO_MAX_NAME 64
-#define VO_SHARED_VERSION 8
+#define VO_SHARED_VERSION 9
 
 struct VOPlayerData {
     char name[VO_MAX_NAME];
@@ -20,6 +20,7 @@ struct VOPlayerData {
     float roomSize;
     uint32_t isUnderwater;
     uint32_t voiceMode;
+    uint32_t isRadio;
 };
 
 struct VOSharedData {
@@ -67,7 +68,7 @@ void VO_ShutdownSharedMemory()
     if (g_hSharedMap) { CloseHandle(g_hSharedMap); g_hSharedMap = nullptr; }
 }
 
-void VO_SetPlayerOcclusion(const char* name, float level, float distance, float x, float y, float z, float vx, float vy, float vz, float indoor, float room, uint32_t underwater, uint32_t voiceMode)
+void VO_SetPlayerOcclusion(const char* name, float level, float distance, float x, float y, float z, float vx, float vy, float vz, float indoor, float room, uint32_t underwater, uint32_t voiceMode, uint32_t isRadio)
 {
     if (!g_pSharedData || !name) return;
 
@@ -87,6 +88,7 @@ void VO_SetPlayerOcclusion(const char* name, float level, float distance, float 
             g_pSharedData->players[i].roomSize = room;
             g_pSharedData->players[i].isUnderwater = underwater;
             g_pSharedData->players[i].voiceMode = voiceMode;
+            g_pSharedData->players[i].isRadio = isRadio;
             g_pSharedData->tick++;
             return;
         }
@@ -108,6 +110,7 @@ void VO_SetPlayerOcclusion(const char* name, float level, float distance, float 
         g_pSharedData->players[idx].roomSize = room;
         g_pSharedData->players[idx].isUnderwater = underwater;
         g_pSharedData->players[idx].voiceMode = voiceMode;
+        g_pSharedData->players[idx].isRadio = isRadio;
         g_pSharedData->tick++;
     }
 }

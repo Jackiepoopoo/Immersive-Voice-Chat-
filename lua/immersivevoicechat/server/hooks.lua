@@ -7,6 +7,10 @@ hook.Add("PlayerCanHearPlayersVoice", "ImmersiveVoiceChat_HearCheck", function(l
         return true, true
     end
     
+    local talkerID = talker:SteamID64()
+    local radioData = ImmersiveVoiceChat.Server.PlayerRadio[talkerID]
+    local speakerOnRadio = radioData and radioData.active
+
     -- Check distance first
     local listenerPos = ImmersiveVoiceChat.Utils.GetHeadPosition(listener)
     local talkerPos = ImmersiveVoiceChat.Utils.GetHeadPosition(talker)
@@ -18,10 +22,15 @@ hook.Add("PlayerCanHearPlayersVoice", "ImmersiveVoiceChat_HearCheck", function(l
     local dist = ImmersiveVoiceChat.Utils.GetDistance(listenerPos, talkerPos)
     
     -- Out of range - don't hear at all (use voice mode adjusted distance)
-    local mode = ImmersiveVoiceChat.Server.PlayerVoiceMode[talker:SteamID64()] or 1
+    local mode = ImmersiveVoiceChat.Server.PlayerVoiceMode[talkerID] or 1
     local modeData = ImmersiveVoiceChat.Config.VoiceModes[mode] or ImmersiveVoiceChat.Config.VoiceModes[1]
     local adjustedMaxDist = ImmersiveVoiceChat.Config.MaxDistance * modeData.maxDistMult
-    
+
+    -- Radio bypass: if speaker is transmitting on radio and listener has radio on same channel
+    if speakerOnRadio and ListenerHasRadioOnChannel(listener, radioData.channel) then
+        return true, true
+    end
+
     if dist > adjustedMaxDist then
         return false
     end
@@ -72,6 +81,32 @@ net.Receive("vo_voice_mode", function(len, ply)
         )
     end
 end)
+
+-- Receive radio transmit state from clients
+net.Receive("vo_radio_transmit", function(len, ply)
+    if IsValid(ply) then
+        local active = net.ReadBool()
+        local channel = math.Clamp(net.ReadUInt(4), 1, ImmersiveVoiceChat.Config.RadioMaxChannels or 9)
+        local plyID = ply:SteamID64()
+        ImmersiveVoiceChat.Server.PlayerRadio[plyID] = ImmersiveVoiceChat.Server.PlayerRadio[plyID] or {}
+        ImmersiveVoiceChat.Server.PlayerRadio[plyID].active = active
+        ImmersiveVoiceChat.Server.PlayerRadio[plyID].channel = channel
+        ImmersiveVoiceChat.Utils.DebugPrint(
+            ImmersiveVoiceChat.Utils.PlayerName(ply) .. " radio " .. (active and "TX ch" .. channel or "OFF")
+        )
+    end
+end)
+
+-- Check if listener has a radio on the same channel as the speaker's radio
+local function ListenerHasRadioOnChannel(listener, channel)
+    if not IsValid(listener) then return false end
+    local listenerID = listener:SteamID64()
+    local radioData = ImmersiveVoiceChat.Server.PlayerRadio[listenerID]
+    if radioData and radioData.active and radioData.channel == channel then
+        return true
+    end
+    return false
+end
 
 -- Think hook for processing occlusion
 hook.Add("Think", "ImmersiveVoiceChat_Think", function()

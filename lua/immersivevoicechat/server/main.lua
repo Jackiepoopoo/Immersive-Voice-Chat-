@@ -4,6 +4,7 @@
 ImmersiveVoiceChat.Server = ImmersiveVoiceChat.Server or {}
 ImmersiveVoiceChat.Server.PlayerState = {}
 ImmersiveVoiceChat.Server.PlayerVoiceMode = {}
+ImmersiveVoiceChat.Server.PlayerRadio = {} -- {steamID = {active=bool, channel=int}}
 ImmersiveVoiceChat.Server.LastCheck = 0
 ImmersiveVoiceChat.Server.ChecksThisTick = 0
 
@@ -318,6 +319,10 @@ function ImmersiveVoiceChat.Server:SendOcclusionToClient(speaker, listener, occl
     -- Get speaker's voice mode
     local voiceMode = ImmersiveVoiceChat.Server.PlayerVoiceMode[speaker:SteamID64()] or 1
 
+    -- Get radio state
+    local radioData = ImmersiveVoiceChat.Server.PlayerRadio[speaker:SteamID64()]
+    local isRadio = radioData and radioData.active and 1 or 0
+
     net.Start("vo_occlusion_update")
         net.WriteEntity(speaker)
         net.WriteFloat(occlusion)
@@ -330,6 +335,7 @@ function ImmersiveVoiceChat.Server:SendOcclusionToClient(speaker, listener, occl
         net.WriteFloat(vz)
         net.WriteBit(underwater)
         net.WriteUInt(voiceMode, 2)
+        net.WriteBit(isRadio)
     net.Send(listener)
 end
 
@@ -417,6 +423,7 @@ function ImmersiveVoiceChat.Server:PlayerDisconnected(ply)
     local plyID = ply:SteamID64()
     ImmersiveVoiceChat.Server.PlayerState[plyID] = nil
     ImmersiveVoiceChat.Server.PlayerVoiceMode[plyID] = nil
+    ImmersiveVoiceChat.Server.PlayerRadio[plyID] = nil
     prevPositions[plyID] = nil
 
     for otherID, state in pairs(ImmersiveVoiceChat.Server.PlayerState) do

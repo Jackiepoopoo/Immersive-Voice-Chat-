@@ -6,7 +6,7 @@
 #define VO_SHARED_MEMORY_NAME "ImmersiveVoiceChatData"
 #define VO_MAX_PLAYERS 64
 #define VO_MAX_NAME 64
-#define VO_SHARED_VERSION 8
+#define VO_SHARED_VERSION 9
 
 struct VOPlayerData {
     char name[VO_MAX_NAME];
@@ -18,6 +18,7 @@ struct VOPlayerData {
     float roomSize;
     uint32_t isUnderwater;
     uint32_t voiceMode;
+    uint32_t isRadio;
 };
 
 struct VOSharedData {

@@ -3,7 +3,7 @@
 #include "module.h"
 #include <cstdint>
 
-extern void VO_SetPlayerOcclusion(const char* name, float level, float distance, float x, float y, float z, float vx, float vy, float vz, float indoor, float room, uint32_t underwater, uint32_t voiceMode);
+extern void VO_SetPlayerOcclusion(const char* name, float level, float distance, float x, float y, float z, float vx, float vy, float vz, float indoor, float room, uint32_t underwater, uint32_t voiceMode, uint32_t isRadio);
 extern void VO_SetListenerPosition(float x, float y, float z, float yaw, float pitch, float roll, float indoor, float room, float surfaceAbsorb, uint32_t underwater);
 extern void VO_ClearPlayerOcclusion();
 
@@ -147,9 +147,10 @@ int LuaInterface::Lua_SetPlayerOcclusion(lua_State* L)
     float room = (float)g_Lua->GetNumber(11);
     uint32_t underwater = (uint32_t)g_Lua->GetNumber(12);
     uint32_t voiceMode = (uint32_t)g_Lua->GetNumber(13);
+    uint32_t isRadio = (uint32_t)g_Lua->GetNumber(14);
     if (name)
     {
-        VO_SetPlayerOcclusion(name, level, distance, x, y, z, vx, vy, vz, indoor, room, underwater, voiceMode);
+        VO_SetPlayerOcclusion(name, level, distance, x, y, z, vx, vy, vz, indoor, room, underwater, voiceMode, isRadio);
     }
     return 0;
 }
@@ -192,6 +193,7 @@ int LuaInterface::Lua_SetPlayerOcclusions(lua_State* L)
                 float room = 0.0f;
                 uint32_t underwater = 0;
                 uint32_t voiceMode = 1;
+                uint32_t isRadio = 0;
 
                 if (g_Lua->IsType(-1, GarrysMod::Lua::Type::TABLE))
                 {
@@ -257,6 +259,11 @@ int LuaInterface::Lua_SetPlayerOcclusions(lua_State* L)
                     voiceMode = (uint32_t)g_Lua->GetNumber(-1);
                     g_Lua->Pop(1);
 
+                    g_Lua->PushNumber(13);
+                    g_Lua->GetTable(-2);
+                    isRadio = (uint32_t)g_Lua->GetNumber(-1);
+                    g_Lua->Pop(1);
+
                     g_Lua->Pop(1);
                 }
                 else
@@ -264,7 +271,7 @@ int LuaInterface::Lua_SetPlayerOcclusions(lua_State* L)
                     level = (float)g_Lua->GetNumber(-1);
                 }
 
-                VO_SetPlayerOcclusion(name, level, distance, px, py, pz, vx, vy, vz, indoor, room, underwater, voiceMode);
+                VO_SetPlayerOcclusion(name, level, distance, px, py, pz, vx, vy, vz, indoor, room, underwater, voiceMode, isRadio);
             }
             g_Lua->Pop(1);
         }

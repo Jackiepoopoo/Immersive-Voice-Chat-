@@ -41,6 +41,14 @@ ImmersiveVoiceChat.Config = {
     DebugMode = false,              -- Enable debug output
     DrawDebugTraces = false,        -- Draw trace lines in-game (sv_cheats required)
     
+    -- Radio / Walkie Talkie
+    RadioMaxChannels = 9,           -- Number of radio channels
+    RadioBandpassLow = 300,         -- Bandpass filter low cutoff (Hz)
+    RadioBandpassHigh = 3000,       -- Bandpass filter high cutoff (Hz)
+    RadioNoiseAmount = 0.12,        -- White noise mix amount (0-1)
+    RadioSquelchClickDur = 0.06,    -- Squelch click duration (seconds)
+    RadioReverbAmount = 0.15,       -- Room reverb simulation (0-1)
+    
     -- Voice modes (0=Whisper, 1=Talk, 2=Yell)
     VoiceModes = {
         [0] = { -- Whisper
