@@ -1,0 +1,73 @@
+# Voice Occlusion Binary Module - Build Instructions
+
+## Do You Need This?
+
+**No.** The addon works without the binary module. It uses volume-based fallback automatically.
+
+The binary module only adds realistic audio muffling (low-pass filtering). Only build this if you want that enhancement.
+
+## Prerequisites (Only if building)
+
+1. **Visual Studio 2019+** - Free from https://visualstudio.microsoft.com/
+   - Install "Desktop development with C++" workload
+
+2. **CMake** - Download from https://cmake.org/download/
+   - Check "Add CMake to PATH" during install
+
+3. **gmod-module-base** - Garry's Mod SDK
+   ```powershell
+   cd C:\Users\eiman\OneDrive\Documents
+   git clone https://github.com/Facepunch/gmod-module-base.git
+   ```
+
+4. **Lua 5.1** - Download from https://www.lua.org/download/
+   - Or use the one bundled with Garry's Mod
+
+## Build Steps (PowerShell)
+
+Open PowerShell and run these commands one at a time:
+
+```powershell
+# 1. Navigate to the project
+cd "C:\Users\eiman\OneDrive\Documents\New OpenCode Project\voiceocclusion\cpp"
+
+# 2. Create build folder
+mkdir build
+
+# 3. Enter build folder
+cd build
+
+# 4. Configure (adjust SDK path if needed)
+cmake .. -DGMOD_SDK_DIR="C:\Users\eiman\OneDrive\Documents\gmod-module-base"
+
+# 5. Build the module
+cmake --build . --config Release
+```
+
+## Install (After Building)
+
+```powershell
+# Copy the built DLL to Gmod
+Copy-Item "C:\Users\eiman\OneDrive\Documents\New OpenCode Project\voiceocclusion\cpp\build\Release\gmcl_voiceocclusion.dll" "C:\Program Files (x86)\Steam\steamapps\common\GarrysMod\garrysmod\lua\bin\"
+```
+
+## Troubleshooting
+
+**"CMake not found"** - Restart PowerShell after installing CMake, or add it to PATH manually.
+
+**"Lua not found"** - CMake can't find Lua headers. Download Lua 5.1 source and set `-DLUA_INCLUDE_DIR="C:\path\to\lua\src"`.
+
+**"gmod-module-base not found"** - Make sure you cloned the SDK and the path is correct.
+
+**Build succeeds but module doesn't load** - Check the DLL is named exactly `gmcl_voiceocclusion.dll` and is in `garrysmod/lua/bin/`.
+
+## Quick Test (No Build Required)
+
+The addon works immediately without building anything. Just copy the `lua/` folder to your addons:
+
+```powershell
+# Copy Lua addon to Gmod
+Copy-Item -Recurse "C:\Users\eiman\OneDrive\Documents\New OpenCode Project\voiceocclusion\lua" "C:\Program Files (x86)\Steam\steamapps\common\GarrysMod\garrysmod\addons\voiceocclusion\lua"
+```
+
+Then restart Garry's Mod and run `vo_settings` in console.

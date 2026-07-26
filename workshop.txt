@@ -1,0 +1,12 @@
+"workshop"
+{
+    "title"         "Voice Occlusion - Realistic Voice Chat Physics"
+    "type"          "Addon"
+    "tags"          "Voice Chat, Sound, Realism, Immersion, RP"
+    "description"   "Adds realistic sound physics to voice chat. Voice becomes muffled when walls or obstacles are between players."
+    "content"       "voiceocclusion"
+    "ignore"        "*.dll"
+    "ignore"        "*.so"
+    "ignore"        "cpp/"
+    "ignore"        "README.md"
+}
