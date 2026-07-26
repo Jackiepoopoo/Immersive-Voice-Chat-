@@ -30,9 +30,9 @@ hook.Add("PlayerCanHearPlayersVoice", "ImmersiveVoiceChat_HearCheck", function(l
     local occlusion = ImmersiveVoiceChat.Server:CalculateOcclusion(talker, listener)
     
     -- Fully occluded - check if volume fallback is enabled
-    -- But NOT for distance-based occlusion: if beyond base MaxDistance, always block
+    -- But NOT for distance-based occlusion: if beyond mode-adjusted MaxDistance, always block
     if occlusion and occlusion >= ImmersiveVoiceChat.Config.MaxOcclusion then
-        if dist <= ImmersiveVoiceChat.Config.MaxDistance and ImmersiveVoiceChat.Config.EnableVolumeFallback then
+        if dist <= adjustedMaxDist and ImmersiveVoiceChat.Config.EnableVolumeFallback then
             -- Wall-based occlusion with fallback: hear but no 3D
             return true, false
         else

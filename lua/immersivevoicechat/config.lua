@@ -4,7 +4,7 @@
 ImmersiveVoiceChat.Config = {
     -- Occlusion detection
     MaxDistance = 1200,              -- Maximum voice range in Source units
-    TraceInterval = 0.3,            -- How often to run tracelines (seconds)
+    TraceInterval = 0.1,            -- How often to run tracelines (seconds)
     TraceMask = MASK_SOLID_BRUSHONLY, -- Trace mask for wall detection
     
     -- Proximity (distance-based volume)
@@ -35,7 +35,7 @@ ImmersiveVoiceChat.Config = {
     FarRange = 1200,                -- Minimal traces up to this distance
     IndoorCacheRadius = 128,        -- Reuse indoor result if player moved less than this
     IndoorCacheInterval = 1.0,      -- Re-evaluate indoor this often at minimum (seconds)
-    DeltaThreshold = 0.05,          -- Only send updates when occlusion changes by more than this
+    DeltaThreshold = 0.02,          -- Only send updates when occlusion changes by more than this
     
     -- Debug
     DebugMode = false,              -- Enable debug output

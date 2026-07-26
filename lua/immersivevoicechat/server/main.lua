@@ -91,7 +91,13 @@ function ImmersiveVoiceChat.Server:CalculateOcclusion(speaker, listener)
     end
 
     local dist = ImmersiveVoiceChat.Utils.GetDistance(speakerPos, listenerPos)
-    if dist > ImmersiveVoiceChat.Config.MaxDistance then
+
+    -- Use voice mode adjusted max distance
+    local mode = ImmersiveVoiceChat.Server.PlayerVoiceMode[speaker:SteamID64()] or 1
+    local modeData = ImmersiveVoiceChat.Config.VoiceModes[mode] or ImmersiveVoiceChat.Config.VoiceModes[1]
+    local adjustedMaxDist = ImmersiveVoiceChat.Config.MaxDistance * modeData.maxDistMult
+
+    if dist > adjustedMaxDist then
         return 1, dist, speakerPos
     end
 
@@ -226,8 +232,6 @@ function ImmersiveVoiceChat.Server:CalculateOcclusion(speaker, listener)
     )
 
     -- Apply voice mode occlusion multiplier
-    local mode = ImmersiveVoiceChat.Server.PlayerVoiceMode[speaker:SteamID64()] or 1
-    local modeData = ImmersiveVoiceChat.Config.VoiceModes[mode] or ImmersiveVoiceChat.Config.VoiceModes[1]
     occlusion = math.Clamp(occlusion * modeData.occlusionMult, ImmersiveVoiceChat.Config.MinOcclusion, ImmersiveVoiceChat.Config.MaxOcclusion)
 
     if ImmersiveVoiceChat.Config.DrawDebugTraces then
