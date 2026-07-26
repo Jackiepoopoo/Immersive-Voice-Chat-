@@ -495,6 +495,46 @@ timer.Create("ImmersiveVoiceChat_Cleanup", 5, 0, function()
     end
 end)
 
+-- Heartbeat: periodically push stored data to shared memory to prevent Mumble staleness
+local function PushAllDataToModule()
+    if not ImmersiveVoiceChat.Client.ModuleLoaded or not immersivevoicechat then return end
+    if not ImmersiveVoiceChat.Client.StoredOcclusion or table.Count(ImmersiveVoiceChat.Client.StoredOcclusion) == 0 then return end
+
+    local data = {}
+    for sid, occ in pairs(ImmersiveVoiceChat.Client.StoredOcclusion) do
+        for _, p in ipairs(player.GetAll()) do
+            if IsValid(p) and p:SteamID64() == sid then
+                local dist = ImmersiveVoiceChat.Client.StoredDistance and ImmersiveVoiceChat.Client.StoredDistance[sid] or 0
+                local pos = ImmersiveVoiceChat.Client.StoredPosition and ImmersiveVoiceChat.Client.StoredPosition[sid]
+                local ind = ImmersiveVoiceChat.Client.StoredIndoor and ImmersiveVoiceChat.Client.StoredIndoor[sid] or 0
+                local room = ImmersiveVoiceChat.Client.StoredRoomSize and ImmersiveVoiceChat.Client.StoredRoomSize[sid] or 0
+                local vel = ImmersiveVoiceChat.Client.StoredVelocity and ImmersiveVoiceChat.Client.StoredVelocity[sid] or Vector(0,0,0)
+                local uw = ImmersiveVoiceChat.Client.StoredUnderwater and ImmersiveVoiceChat.Client.StoredUnderwater[sid] and 1 or 0
+                local vmode = ImmersiveVoiceChat.Client.StoredVoiceMode and ImmersiveVoiceChat.Client.StoredVoiceMode[sid] or 1
+                local px, py, pz = 0, 0, 0
+                if pos then px, py, pz = pos.x, pos.y, pos.z end
+                data[p:Nick()] = {occ, dist, px, py, pz, vel.x, vel.y, vel.z, ind, room, uw, vmode}
+                break
+            end
+        end
+    end
+    immersivevoicechat.SetPlayerOcclusions(data)
+
+    local lp = LocalPlayer()
+    if IsValid(lp) then
+        local lpp = lp:GetPos()
+        local la = lp:GetAngles()
+        local listenerIndoor, listenerRoom = ImmersiveVoiceChat.Client:DetectIndoorLocal()
+        local surfaceAbsorb = ImmersiveVoiceChat.Client:DetectSurfaceAbsorb()
+        local listenerUnderwater = bit.band(util.PointContents(lpp + Vector(0, 0, 64)), CONTENTS_WATER) == CONTENTS_WATER and 1 or 0
+        immersivevoicechat.SetListenerPosition(lpp.x, lpp.y, lpp.z, la.y, la.p, la.r, listenerIndoor, listenerRoom, surfaceAbsorb, listenerUnderwater)
+    end
+end
+
+timer.Create("ImmersiveVoiceChat_Heartbeat", 0.5, 0, function()
+    PushAllDataToModule()
+end)
+
 -- HUD Indicator: shows occlusion level for the player you're looking at
 local function DrawOcclusionHUD()
     if not ImmersiveVoiceChat.Client.HUDEnabled then return end

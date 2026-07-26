@@ -425,8 +425,8 @@ mumble_onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t cha
         g_lastUpdateTimeMs = now;
     }
 
-    // If no updates for 2 seconds, server is likely gone
-    if (now - g_lastUpdateTimeMs > 2000) {
+    // If no updates for 30 seconds, server is likely gone (heartbeat keeps it alive at 500ms)
+    if (now - g_lastUpdateTimeMs > 30000) {
         return false;
     }
 
