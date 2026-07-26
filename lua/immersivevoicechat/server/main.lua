@@ -320,9 +320,15 @@ function ImmersiveVoiceChat.Server:SendOcclusionToClient(speaker, listener, occl
     -- Get speaker's voice mode
     local voiceMode = ImmersiveVoiceChat.Server.PlayerVoiceMode[speaker:SteamID64()] or 1
 
-    -- Get radio state
-    local radioData = ImmersiveVoiceChat.Server.PlayerRadio[speaker:SteamID64()]
-    local isRadio = radioData and radioData.active and 1 or 0
+    -- Get radio state: isRadio only when BOTH speaker and listener are on same channel
+    local speakerRadioData = ImmersiveVoiceChat.Server.PlayerRadio[speaker:SteamID64()]
+    local speakerOnRadio = speakerRadioData and speakerRadioData.active
+    local listenerChannel = ImmersiveVoiceChat.Server.PlayerRadioChannel[listener:SteamID64()]
+    local isRadio = 0
+    if speakerOnRadio and listenerChannel and speakerRadioData.channel == listenerChannel then
+        isRadio = 1
+        print("[Radio] " .. speaker:Nick() .. " -> " .. listener:Nick() .. " isRadio=1 ch=" .. speakerRadioData.channel)
+    end
 
     net.Start("vo_occlusion_update")
         net.WriteEntity(speaker)

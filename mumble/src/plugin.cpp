@@ -545,6 +545,25 @@ mumble_onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t cha
     float occlusion = info.occlusion;
     float distance = info.distance;
 
+    // --- Radio / Walkie Talkie: bypass all normal processing ---
+    if (info.isRadio) {
+        bool justStarted = false;
+        auto it = g_radio.find(userID);
+        if (it == g_radio.end()) {
+            justStarted = true;
+        } else if (!it->second.wasRadio) {
+            justStarted = true;
+        }
+        ApplyRadioFilter(outputPCM, sampleCount, channelCount, sampleRate, userID, justStarted);
+        g_radio[userID].wasRadio = true;
+        return true;
+    } else {
+        auto it = g_radio.find(userID);
+        if (it != g_radio.end()) {
+            it->second.wasRadio = false;
+        }
+    }
+
     // --- Voice mode volume multiplier ---
     static const float VOICE_MODE_VOLUME[] = { 0.5f, 1.0f, 1.4f };
     static const float VOICE_MODE_CUTOFF_MULT[] = { 0.4f, 1.0f, 2.5f };
@@ -672,24 +691,6 @@ mumble_onAudioSourceFetched(float *outputPCM, uint32_t sampleCount, uint16_t cha
     bool listenerUnderwater = g_sharedData && g_sharedData->listenerIsUnderwater != 0;
     if (speakerUnderwater || listenerUnderwater) {
         ApplyUnderwaterEffect(outputPCM, sampleCount, channelCount, sampleRate);
-    }
-
-    // --- Radio / Walkie Talkie filter ---
-    if (info.isRadio) {
-        bool justStarted = false;
-        auto it = g_radio.find(userID);
-        if (it == g_radio.end()) {
-            justStarted = true;
-        } else if (!it->second.wasRadio) {
-            justStarted = true;
-        }
-        ApplyRadioFilter(outputPCM, sampleCount, channelCount, sampleRate, userID, justStarted);
-        g_radio[userID].wasRadio = true;
-    } else {
-        auto it = g_radio.find(userID);
-        if (it != g_radio.end()) {
-            it->second.wasRadio = false;
-        }
     }
 
     return true;
