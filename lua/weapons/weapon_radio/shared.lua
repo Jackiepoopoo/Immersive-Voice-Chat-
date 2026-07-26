@@ -38,7 +38,6 @@ end
 
 function SWEP:SetupDataTables()
     self:NetworkVar("Bool", 0, "Transmitting")
-    self:NetworkVar("Int", 0, "Channel")
 end
 
 function SWEP:PrimaryAttack()

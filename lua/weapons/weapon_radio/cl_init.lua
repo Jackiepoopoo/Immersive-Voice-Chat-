@@ -18,6 +18,8 @@ local channelColors = {
 local transmitNoise = 0
 local targetNoise = 0
 
+local clientChannel = 1
+
 local function SyncChannelToServer(ch)
     net.Start("vo_radio_channel")
         net.WriteUInt(ch, 4)
@@ -25,7 +27,7 @@ local function SyncChannelToServer(ch)
 end
 
 function SWEP:Deploy()
-    self:SetChannel(1)
+    clientChannel = 1
     self:SetTransmitting(false)
     SyncChannelToServer(1)
 end
@@ -68,7 +70,6 @@ function SWEP:StartTransmit()
     self:SetTransmitting(true)
     net.Start("vo_radio_transmit")
         net.WriteBool(true)
-        net.WriteUInt(self:GetChannel(), 4)
     net.SendToServer()
     targetNoise = 1.0
 end
@@ -77,28 +78,25 @@ function SWEP:StopTransmit()
     self:SetTransmitting(false)
     net.Start("vo_radio_transmit")
         net.WriteBool(false)
-        net.WriteUInt(self:GetChannel(), 4)
     net.SendToServer()
     targetNoise = 0.0
 end
 
 function SWEP:ScrollUp()
-    local ch = self:GetChannel() + 1
-    if ch > self.MaxChannels then
-        ch = 1
+    clientChannel = clientChannel + 1
+    if clientChannel > self.MaxChannels then
+        clientChannel = 1
     end
-    self:SetChannel(ch)
-    SyncChannelToServer(ch)
+    SyncChannelToServer(clientChannel)
     surface.PlaySound("buttons/lightswitch2.wav")
 end
 
 function SWEP:ScrollDown()
-    local ch = self:GetChannel() - 1
-    if ch < 1 then
-        ch = self.MaxChannels
+    clientChannel = clientChannel - 1
+    if clientChannel < 1 then
+        clientChannel = self.MaxChannels
     end
-    self:SetChannel(ch)
-    SyncChannelToServer(ch)
+    SyncChannelToServer(clientChannel)
     surface.PlaySound("buttons/lightswitch2.wav")
 end
 
@@ -119,12 +117,11 @@ function SWEP:DrawHUD()
     local panelX = scrW - panelW - 20
     local panelY = scrH - panelH - 20
 
-    local ch = self:GetChannel()
-    local col = channelColors[ch] or color_white
+    local col = channelColors[clientChannel] or color_white
 
     draw.RoundedBox(12, panelX, panelY, panelW, panelH, Color(20, 20, 20, 200))
 
-    draw.SimpleText("CH " .. ch, "DermaLarge", panelX + panelW / 2, panelY + 22, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("CH " .. clientChannel, "DermaLarge", panelX + panelW / 2, panelY + 22, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     local transmitY = panelY + 55
     if self:GetTransmitting() then

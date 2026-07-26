@@ -97,14 +97,12 @@ end)
 net.Receive("vo_radio_transmit", function(len, ply)
     if IsValid(ply) then
         local active = net.ReadBool()
-        local channel = math.Clamp(net.ReadUInt(4), 1, ImmersiveVoiceChat.Config.RadioMaxChannels or 9)
         local plyID = ply:SteamID64()
+        local existingChannel = ImmersiveVoiceChat.Server.PlayerRadioChannel[plyID] or 1
         ImmersiveVoiceChat.Server.PlayerRadio[plyID] = ImmersiveVoiceChat.Server.PlayerRadio[plyID] or {}
         ImmersiveVoiceChat.Server.PlayerRadio[plyID].active = active
-        ImmersiveVoiceChat.Server.PlayerRadio[plyID].channel = channel
-        -- Also sync the channel to PlayerRadioChannel
-        ImmersiveVoiceChat.Server.PlayerRadioChannel[plyID] = channel
-        print("[ImmersiveVoiceChat] " .. ply:Nick() .. " radio " .. (active and "TX ch" .. channel or "OFF"))
+        ImmersiveVoiceChat.Server.PlayerRadio[plyID].channel = existingChannel
+        print("[ImmersiveVoiceChat] " .. ply:Nick() .. " radio " .. (active and "TX ch" .. existingChannel or "OFF"))
     end
 end)
 
@@ -112,7 +110,14 @@ end)
 net.Receive("vo_radio_channel", function(len, ply)
     if IsValid(ply) then
         local channel = math.Clamp(net.ReadUInt(4), 1, ImmersiveVoiceChat.Config.RadioMaxChannels or 9)
-        ImmersiveVoiceChat.Server.PlayerRadioChannel[ply:SteamID64()] = channel
+        local plyID = ply:SteamID64()
+        ImmersiveVoiceChat.Server.PlayerRadioChannel[plyID] = channel
+        -- Also update the active radio data if player is currently transmitting
+        local radioData = ImmersiveVoiceChat.Server.PlayerRadio[plyID]
+        if radioData and radioData.active then
+            radioData.channel = channel
+        end
+        print("[ImmersiveVoiceChat] " .. ply:Nick() .. " radio channel set to " .. channel)
     end
 end)
 
